@@ -55,8 +55,8 @@ export default function WishlistPage() {
               <p className="text-gray-600 dark:text-gray-400 mb-6">
                 Start adding items to your wishlist while you shop
               </p>
-              <Button as={Link} href="/products">
-                Continue Shopping
+              <Button>
+                <Link href="/products">Continue Shopping</Link>
               </Button>
             </motion.div>
           ) : (

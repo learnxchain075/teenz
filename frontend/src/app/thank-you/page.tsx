@@ -90,12 +90,12 @@ export default function ThankYouPage() {
             transition={{ delay: 0.4 }}
             className="flex flex-col sm:flex-row gap-4 justify-center"
           >
-            <Button as={Link} href="/products">
+            <Link href="/products" className="btn btn-primary">
               Continue Shopping
-            </Button>
-            <Button as={Link} href="/account/orders" variant="outline">
+            </Link>
+            <Link href="/account/orders" className="btn btn-outline">
               View Order Status
-            </Button>
+            </Link>
           </motion.div>
         </div>
       </div>

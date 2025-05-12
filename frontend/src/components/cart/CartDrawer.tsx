@@ -165,14 +165,13 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                             Shipping and taxes calculated at checkout.
                           </p>
                           <div className="mt-6">
-                            <Button
-                              as={Link}
+                            <Link
                               href="/checkout"
                               onClick={onClose}
-                              fullWidth
+                              className="inline-flex w-full justify-center rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
                             >
                               Checkout
-                            </Button>
+                            </Link>
                           </div>
                           <div className="mt-6 flex justify-center text-center text-sm text-gray-500 dark:text-gray-400">
                             <button

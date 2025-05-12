@@ -5,6 +5,8 @@ import { motion } from 'framer-motion';
 import { Plus, Search, Filter, Edit, Trash2, Eye, FileText } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import AdminTable from '@/components/admin/Table';
+import Link from 'next/link';
+import clsx from 'clsx';
 
 const posts = [
   {
@@ -40,10 +42,15 @@ export default function BlogPage() {
             Manage your blog content
           </p>
         </div>
-        <Button as="a" href="/admin/blog/new">
+        <Link
+          href="/admin/blog/new"
+          className={clsx(
+            "inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+          )}
+        >
           <Plus className="w-5 h-5 mr-2" />
           New Post
-        </Button>
+        </Link>
       </div>
 
       <div className="bg-white dark:bg-card rounded-xl shadow-sm">
@@ -107,11 +114,10 @@ export default function BlogPage() {
                 header: 'Status',
                 accessor: 'status',
                 cell: (value) => (
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    value === 'Published'
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${value === 'Published'
                       ? 'bg-green-100 text-green-800'
                       : 'bg-yellow-100 text-yellow-800'
-                  }`}>
+                    }`}>
                     {value}
                   </span>
                 ),

@@ -76,24 +76,19 @@ export default function Hero({
               transition={{ delay: 0.5, duration: 0.6 }}
               className="flex flex-col sm:flex-row gap-4"
             >
-              <Button
-                as={Link}
+              <Link
                 href="/products"
-                size="lg"
-                className="bg-white text-gray-900 hover:bg-gray-100"
+                className="inline-flex items-center justify-center bg-white text-gray-900 hover:bg-gray-100 px-6 py-3 rounded-lg text-lg font-medium"
               >
                 {ctaText}
                 <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-              <Button
-                as={Link}
+              </Link>
+              <Link
                 href="/collections"
-                variant="outline"
-                size="lg"
-                className="border-white text-white hover:bg-white/10"
+                className="inline-flex items-center justify-center border border-white text-white hover:bg-white/10 px-6 py-3 rounded-lg text-lg font-medium"
               >
                 View Collection
-              </Button>
+              </Link>
             </motion.div>
 
             {/* Stats */}

@@ -41,10 +41,13 @@ export default function CartPage() {
                 </p>
               </div>
               
-              <Button as={Link} href="/products">
+              <Link
+                href="/products"
+                className="inline-flex items-center px-4 py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 dark:bg-primary-400 dark:hover:bg-primary-500"
+              >
                 Continue Shopping
                 <ArrowRight className="ml-2 w-5 h-5" />
-              </Button>
+              </Link>
             </motion.div>
           </div>
         </div>
@@ -180,14 +183,13 @@ export default function CartPage() {
                   </div>
                 </div>
 
-                <Button
-                  as={Link}
+                <Link
                   href="/checkout"
-                  className="w-full mt-6"
+                  className="w-full mt-6 inline-flex items-center justify-center px-4 py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 dark:bg-primary-400 dark:hover:bg-primary-500"
                 >
                   Proceed to Checkout
                   <ArrowRight className="ml-2 w-5 h-5" />
-                </Button>
+                </Link>
 
                 <p className="mt-4 text-sm text-gray-500 dark:text-gray-400 text-center">
                   or{' '}

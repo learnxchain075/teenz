@@ -37,6 +37,8 @@ export interface Review {
   content: string;
   created_at: string;
   user?: {
+    [x: string]: any;
+    raw_user_meta_data: any;
     id: string;
     email: string;
     avatar_url?: string;

@@ -61,14 +61,11 @@ export default function ForgotPasswordPage() {
                 <div className="bg-success-100 dark:bg-success-900/30 text-success-600 dark:text-success-400 p-4 rounded-lg mb-6">
                   Check your email for password reset instructions
                 </div>
-                <Button
-                  as={Link}
-                  href="/auth/login"
-                  variant="outline"
-                  className="w-full"
-                >
-                  Return to Login
-                </Button>
+<Link href="/auth/login" className="w-full inline-block">
+  <Button className="w-full" variant="outline">
+    Return to Login
+  </Button>
+</Link>
               </motion.div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-6">
