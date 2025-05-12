@@ -1,3 +1,4 @@
+"use client"
 import { motion } from 'framer-motion';
 import { Truck, Globe, Clock, DollarSign } from 'lucide-react';
 
