@@ -33,11 +33,11 @@ const faqs = [
   },
   {
     question: 'How can I track my order?',
-    answer: 'Once your order ships, you'll receive a tracking number via email.'
+    answer: 'Once your order ships, you will receive a tracking number via email.'
   },
   {
     question: 'What if my package is lost?',
-    answer: 'Contact our support team and we'll help locate your package or process a refund.'
+    answer: 'Contact our support team and we will help locate your package or process a refund.'
   }
 ];
 
