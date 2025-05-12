@@ -11,11 +11,11 @@ RUN npm install
 # Copy the frontend code
 COPY . .
 
-# Build the frontend
+# Build the Next.js application
 RUN npm run build
-
-# Serve the frontend with a simple web server
-CMD ["npx", "serve", "-s", "dist"]
 
 # Expose frontend port
 EXPOSE 3000
+
+# Start the Next.js application in production mode
+CMD ["npm", "run", "start"]

@@ -1,11 +1,11 @@
-version: '3.8'
+version: "3.8"
 
 services:
   backend:
     build: ./backend
     container_name: teenz-backend
     ports:
-      - "5000:5000"  # Backend exposed on port 5000 (internal)
+      - "5000:5000" # Backend exposed on port 5000 (internal)
     env_file:
       - backend/.env
     depends_on:
@@ -23,12 +23,17 @@ services:
     build: ./frontend
     container_name: teenz-frontend
     ports:
-      - "80:3000"  # Frontend exposed on port 80 (public HTTP)
+      - "80:3000" # Frontend exposed on port 80 (public HTTP)
     depends_on:
       - backend
     restart: always
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   db:
     image: postgres:15
@@ -39,7 +44,7 @@ services:
       POSTGRES_PASSWORD: mypassword
       POSTGRES_DB: mydatabase
     ports:
-      - "5432:5432"  # Exposed for backend access only
+      - "5432:5432" # Exposed for backend access only
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
