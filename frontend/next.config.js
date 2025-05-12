@@ -12,9 +12,19 @@ const nextConfig = {
     ],
   },
   experimental: {
-    serverActions: true,
+    appDir: true, // Ensure the app directory is enabled if using app directory
+    serverActions: {}, // Use an object here instead of a boolean
   },
   transpilePackages: ['framer-motion'],
-}
+  webpack: (config) => {
+    // Ensuring Framer Motion is properly transpiled and bundled
+    config.resolve.alias = {
+      ...(config.resolve.alias || {}),
+      'framer-motion': require.resolve('framer-motion'),
+    };
 
-module.exports = nextConfig
+    return config;
+  },
+};
+
+module.exports = nextConfig;
