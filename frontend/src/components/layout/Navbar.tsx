@@ -270,9 +270,12 @@ export default function Navbar() {
               >
                 {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </button>
-              <Button as={Link} href="/auth/login" fullWidth>
+              <Link
+                href="/auth/login"
+                className="block w-full text-center px-4 py-2 text-base font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 transition-colors"
+              >
                 Sign In
-              </Button>
+              </Link>
             </div>
           </div>
         </div>
