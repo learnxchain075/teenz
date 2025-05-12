@@ -193,17 +193,15 @@ export default function InstagramFeed({
           viewport={{ once: true }}
           transition={{ delay: 0.4 }}
         >
-          <Button
-            as="a"
+          <a
             href={`https://instagram.com/${username.replace('@', '')}`}
             target="_blank"
             rel="noopener noreferrer"
-            variant="outline"
-            size="lg"
+            className="inline-flex items-center justify-center px-6 py-3 border border-gray-300 rounded-lg text-lg font-medium text-gray-700 bg-white hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-700 transition-colors"
           >
             Follow Us on Instagram
             <Instagram className="ml-2 w-5 h-5" />
-          </Button>
+          </a>
         </motion.div>
       </div>
     </section>
