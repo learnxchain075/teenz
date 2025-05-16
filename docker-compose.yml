@@ -22,8 +22,10 @@ services:
   frontend:
     build: ./frontend
     container_name: teenz-frontend
+    # ports:
+    #   - "80:3000" 
     ports:
-      - "80:3000" # Frontend exposed on port 80 (public HTTP)
+      - "3000:3000" 
     depends_on:
       - backend
     restart: always
