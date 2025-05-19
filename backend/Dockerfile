@@ -1,23 +1,24 @@
-FROM node:18
 
-# Set working directory inside the container
+
+# Build Stage
+FROM node:18-alpine as builder
+
 WORKDIR /app
 
-# Copy package.json and package-lock.json first
 COPY package*.json ./
+RUN npm ci
 
-# Install dependencies
-RUN npm install
-
-# Copy Prisma schema and generate client
 COPY prisma ./prisma
-RUN npx prisma generate --schema=/app/prisma/schema.prisma
+RUN npx prisma generate
 
-# Copy the rest of the project files
 COPY . .
 
-# Expose backend port
-EXPOSE 5000
+# Final Stage
+FROM node:18-alpine
 
-# Start backend server
+WORKDIR /app
+
+COPY --from=builder /app /app
+
+EXPOSE 5000
 CMD ["npm", "run", "start:dev"]
