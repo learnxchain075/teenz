@@ -143,47 +143,19 @@ export default function Navbar() {
                 )}
               </button>
 
-              <HeadlessMenu as="div" className="relative">
-                <HeadlessMenu.Button className="text-gray-700 dark:text-gray-200 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+            <div className="relative">
+              
+              <div className="py-1">
+                <Link
+                  href="/auth/login"
+                  className={cn(
+                    'block  py-2 text-sm text-gray-700 dark:text-gray-200 relative group'
+                  )}
+                >
                   <User className="h-5 w-5" />
-                </HeadlessMenu.Button>
-                <HeadlessMenu.Items className="absolute right-0 mt-2 w-48 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-                  <div className="py-1">
-                    <HeadlessMenu.Item>
-                      {({ active }) => (
-                        <Link
-                          href="/auth/login"
-                          className={cn(
-                            'block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 relative group',
-                            active ? 'bg-gray-100 dark:bg-gray-700' : ''
-                          )}
-                        >
-                          <span className="relative">
-                            Sign In
-                            <span className="absolute inset-x-0 -bottom-0.5 h-0.5 bg-primary-600 dark:bg-primary-400 transform origin-left scale-x-0 transition-transform group-hover:scale-x-100" />
-                          </span>
-                        </Link>
-                      )}
-                    </HeadlessMenu.Item>
-                    <HeadlessMenu.Item>
-                      {({ active }) => (
-                        <Link
-                          href="/auth/signup"
-                          className={cn(
-                            'block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 relative group',
-                            active ? 'bg-gray-100 dark:bg-gray-700' : ''
-                          )}
-                        >
-                          <span className="relative">
-                            Create Account
-                            <span className="absolute inset-x-0 -bottom-0.5 h-0.5 bg-primary-600 dark:bg-primary-400 transform origin-left scale-x-0 transition-transform group-hover:scale-x-100" />
-                          </span>
-                        </Link>
-                      )}
-                    </HeadlessMenu.Item>
-                  </div>
-                </HeadlessMenu.Items>
-              </HeadlessMenu>
+                </Link>
+              </div>
+            </div>
 
               <button
                 onClick={toggleTheme}
