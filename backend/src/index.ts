@@ -3,9 +3,9 @@ import cors from "cors";
 import dotenv from "dotenv";
 import helmet from "helmet";
 import compression from "compression";
-import Logger from "./utils/logger";
-import morganMiddleware from "./middlewares/morganMiddleware";
-import { errorHandler } from "./middlewares/errorMiddleware";
+// import Logger from "./utils/logger";
+// import morganMiddleware from "./middlewares/morganMiddleware";
+// import { errorHandler } from "./middlewares/errorMiddleware";
 import { getErrorStack } from "./utils/common_utils";
 import { sendErrorMessageToSupport } from "./utils/mailer";
 
@@ -37,7 +37,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
 app.use(compression({ threshold: 0 }));
-app.use(morganMiddleware);
+// app.use(morganMiddleware);
 
 
 // Basic route
@@ -54,13 +54,13 @@ app.get("/", (req, res) => {
 // app.use("/api/v1", authenticateToken, apiRouter);
 
 // Error handling middleware
-app.use(errorHandler);
+// app.use(errorHandler);
 
 // Handle uncaught exceptions
-process.on("uncaughtException", function (err) {
-  Logger.error(`Error occurred: ${getErrorStack(err)}`);
-  sendErrorMessageToSupport(getErrorStack(err));
-});
+// process.on("uncaughtException", function (err) {
+//   Logger.error(`Error occurred: ${getErrorStack(err)}`);
+//   sendErrorMessageToSupport(getErrorStack(err));
+// });
 
 // Create and start the server
 const PORT = process.env.PORT || 5000;
