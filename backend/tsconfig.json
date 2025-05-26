@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    //  "target": "es2021"
+    "target": "es6",
+    "module": "commonjs",
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "strict": true,
+    "esModuleInterop": true,
+    "typeRoots": ["./src/types","node_modules/@types"],
+    "types": []
+    // "moduleResolution": "node",
+    // "resolveJsonModule": true ,
+    // "forceConsistentCasingInFileNames": true ,
+    // "skipLibCheck": true ,
+   
+  }
+  // "include": ["src/**/*.ts", "src/sessionStore.ts"],
+  // "exclude": ["node_modules/**", "dist"]
+}
