@@ -4,6 +4,7 @@ import bcrypt from "bcrypt";
 import { prisma } from "../../db/prisma";
 import { sendResetEmail } from "../../config/email";
 
+// Forgot password controller
 export const forgotPassword = async (req: Request, res: Response) => {
   try {
     const { email } = req.body;
@@ -55,6 +56,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
   }
 };
 
+// Reset password controller
 export const resetPassword = async (req: Request, res: Response) => {
   try {
     const { token, newPassword } = req.body;
@@ -104,44 +106,46 @@ export const resetPassword = async (req: Request, res: Response) => {
   }
 };
 
-// export const changePassword = async (req: Request, res: Response) => {
-//   try {
-//     const { oldPassword, newPassword } = req.body;
-//     const userId = req.user.id;
 
-//     // Validate input
-//     if (!oldPassword || !newPassword) {
-//       return res.status(400).json({ error: "Old password and new password are required." });
-//     }
+// change password controller
+export const changePassword = async (req: Request, res: Response) => {
+  try {
+    const { userId, oldPassword, newPassword } = req.body;
 
-//     // Find the user by ID
-//     const user = await prisma.user.findUnique({
-//       where: { id: userId },
-//     });
+    if (!userId || !oldPassword || !newPassword) {
+      res.status(400).json({ error: "User ID, old password, and new password are required." });
+      return;
+    }
 
-//     if (!user) {
-//       return res.status(404).json({ error: "User not found." });
-//     }
+    // Find the user by ID
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
 
-//     // Compare the old password with the stored password hash
-//     const isOldPasswordValid = await bcrypt.compare(oldPassword, user.password);
+    if (!user) {
+      res.status(404).json({ error: "User not found." });
+      return;
+    }
 
-//     if (!isOldPasswordValid) {
-//       return res.status(400).json({ error: "Old password is incorrect." });
-//     }
+    // Check if the old password matches
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) {
+      res.status(401).json({ error: "Old password is incorrect." });
+      return;
+    }
 
-//     // Hash the new password
-//     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+    // Hash the new password
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
 
-//     // Update the user's password
-//     await prisma.user.update({
-//       where: { id: userId },
-//       data: { password: hashedNewPassword },
-//     });
+    // Update the user's password
+    await prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedNewPassword },
+    });
 
-//     res.status(200).json({ message: "Password has been updated successfully." });
-//   } catch (error) {
-//     console.error("Error in change password:", error);
-//     res.status(500).json({ error: "Something went wrong, please try again." });
-//   }
-// };
+    res.status(200).json({ message: "Password has been changed successfully." });
+  } catch (error) {
+    console.error("Error in change password:", error);
+    res.status(500).json({ error: "Something went wrong, please try again." });
+  }
+};

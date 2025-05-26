@@ -14,7 +14,7 @@ import { customValidationResult, getErrorMessage, getErrorStack } from "./utils/
 
 
 import { CONFIG } from "./config";
-import signinRoute from "./routes/signin/signinRoute";
+import signinRoute from "./routes/auth/signinRoute";
 
 dotenv.config();
 
@@ -22,6 +22,7 @@ const app = express();
 
 // Middleware setup
 
+app.use(express.json());
 app.use(
   cors({
     // origin: ["http://localhost:3000", "https://frontend-u5p04pebr-academics-pros-projects.vercel.app/"],
@@ -32,7 +33,6 @@ app.use(
   })
 );
 
-app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
 app.use(compression({ threshold: 0 }));
@@ -43,8 +43,8 @@ app.get("/", (req, res) => {
   res.send("Backend is live");
 });
 
-// app.use("/api/v1", publicRouter);
 app.use("/api/v1/auth", signinRoute);
+// app.use("/api/v1", publicRouter);
 
 app.use("/api/v1", apiRouter);
 

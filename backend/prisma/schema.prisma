@@ -6,10 +6,45 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
 model User {
+  id             Int      @id @default(autoincrement())
+  name           String
+  email          String   @unique
+  password       String
+  profilePicture String?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  role    Role      @default(USER)
+  Address Address[]
+
+  passwordResetToken passwordResetToken[]
+}
+
+model Address {
   id        Int      @id @default(autoincrement())
-  name      String
-  email     String   @unique
-  password  String
+  userId    Int
+  street    String
+  city      String
+  state     String
+  zipCode   String
   createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model passwordResetToken {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  token     String    @unique
+  createdAt DateTime  @default(now())
+  expiresAt DateTime
+  usedAt    DateTime?
+  user      User      @relation(fields: [userId], references: [id])
+}
+
+enum Role {
+  USER
+  ADMIN
 }
