@@ -1,11 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, FormEvent, ChangeEvent } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Search, Filter, Edit, Trash2, Image as ImageIcon } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import AdminTable from '@/components/admin/Table';
 import Image from 'next/image';
+import Modal from '@/components/ui/Modal';
+// import Modal from '@/components/ui/Modal';
 
 const categories = [
   {
@@ -29,7 +31,25 @@ const categories = [
 export default function CategoriesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  // const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [categoryData, setCategoryData] = useState({
+    name: '',
+    description: '',
+    imageUrl: '',
+  });
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>): void {
+    throw new Error('Function not implemented.');
+  }
+
+  function handleInputChange(event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void {
+    const { name, value } = event.target;
+    setCategoryData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  }
 
   return (
     <div className="space-y-6">
@@ -45,6 +65,81 @@ export default function CategoriesPage() {
           Add Category
         </Button>
       </div>
+
+
+{/* Modal */}
+{isAddModalOpen && (
+  <Modal onClose={() => setIsAddModalOpen(false)}>
+    <div className="p-8 max-w-lg mx-auto bg-white rounded-lg shadow-xl">
+      <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">Add New Category</h2>
+      <form onSubmit={handleSubmit}>
+        <div className="mb-6">
+          <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+            Category Name
+          </label>
+          <input
+            id="name"
+            name="name"
+            type="text"
+            value={categoryData.name}
+            onChange={handleInputChange}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-300"
+            placeholder="Enter category name"
+          />
+        </div>
+
+        <div className="mb-6">
+          <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+            Description
+          </label>
+          <textarea
+            id="description"
+            name="description"
+            value={categoryData.description}
+            onChange={handleInputChange}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-300"
+            placeholder="Enter description"
+            rows={4}
+          />
+        </div>
+
+        <div className="mb-6">
+          <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700 mb-2">
+            Image URL
+          </label>
+          <input
+            id="imageUrl"
+            name="imageUrl"
+            type="text"
+            value={categoryData.imageUrl}
+            onChange={handleInputChange}
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-300"
+            placeholder="Enter image URL"
+          />
+        </div>
+
+        <div className="flex justify-end space-x-4">
+          <Button
+            onClick={() => setIsAddModalOpen(false)}
+            className="px-6 py-2 text-sm font-semibold bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition duration-300"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            className="px-6 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300"
+          >
+            Save Category
+          </Button>
+        </div>
+      </form>
+    </div>
+  </Modal>
+)}
+
+
+
+      
 
       <div className="bg-white dark:bg-card rounded-xl shadow-sm">
         <div className="p-6">

@@ -1,37 +1,74 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import axios from 'axios';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Mail, Lock, ArrowRight, EyeOff, Eye } from 'lucide-react';
 import Button from '@/components/ui/Button';
 
+/**
+ * LoginPage component
+ *
+ * Notes for integrators:
+ * - Set NEXT_PUBLIC_API_URL in your .env.local file, e.g.
+ *   NEXT_PUBLIC_API_URL="http://localhost:5000" (❗ never commit this value)
+ * - Backend should respond to POST /auth/signin with
+ *   { success: true, token: "<JWT>", user: { ... } } on success
+ *   or { success: false, message: "Invalid email or password" } on failure
+ * - Adjust field names if your backend differs (email ➡️ "username", etc.)
+ */
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
+
+  const API_URL = `http://localhost:5000/api/v1/auth/signin`;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
     try {
-      // Handle login logic here
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulated API call
-    } catch (err) {
-      setError('Invalid email or password');
+      type LoginResponse = {
+        success: boolean;
+        token?: string;
+        user?: any;
+        message?: string;
+      };
+
+      const { data } = await axios.post<LoginResponse>(API_URL, {
+        email,
+        password,
+      });
+
+      if (data?.success) {
+
+        window.localStorage.setItem('token', data.token!);
+
+        // Optional: cache user info for quick reads
+        window.localStorage.setItem('user', JSON.stringify(data.user));
+
+        // Redirect to the dashboard (or wherever you want).
+        router.push('/');
+      } else {
+        setError(data?.message || 'Invalid email or password');
+      }
+    } catch (err: any) {
+      // Axios wraps non‑2xx responses in err.response
+      const msg = err?.response?.data?.message ?? 'Something went wrong';
+      setError(msg);
     } finally {
       setIsLoading(false);
     }
   };
-  
 
-
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
-  };
+  const togglePasswordVisibility = () => setShowPassword(!showPassword);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-24">
@@ -50,10 +87,9 @@ export default function LoginPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Email */}
               <div>
-                <label className="block text-sm font-medium mb-2">
-                  Email Address
-                </label>
+                <label className="block text-sm font-medium mb-2">Email Address</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
                   <input
@@ -67,43 +103,37 @@ export default function LoginPage() {
                 </div>
               </div>
 
-             <div>
-      <label className="block text-sm font-medium mb-2">
-        Password
-      </label>
-      <div className="relative">
-        <Lock className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-        <input
-          type={showPassword ? 'text' : 'password'}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full pl-10 pr-10 py-2 rounded-lg border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-800"
-          placeholder="••••••••"
-          required
-        />
-        <button
-          type="button"
-          onClick={togglePasswordVisibility}
-          className="absolute right-3 top-3 text-gray-400"
-        >
-          {showPassword ? (
-            <EyeOff className="w-5 h-5" />
-          ) : (
-            <Eye className="w-5 h-5" />
-          )}
-        </button>
-      </div>
-    </div>
+              {/* Password */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full pl-10 pr-10 py-2 rounded-lg border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-800"
+                    placeholder="••••••••"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={togglePasswordVisibility}
+                    className="absolute right-3 top-3 text-gray-400"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+              </div>
 
+              {/* Remember me + Forgot */}
               <div className="flex items-center justify-between">
                 <label className="flex items-center">
                   <input
                     type="checkbox"
                     className="rounded border-gray-300 dark:border-gray-700 text-primary-600 focus:ring-primary-500"
                   />
-                  <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
-                    Remember me
-                  </span>
+                  <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">Remember me</span>
                 </label>
 
                 <Link
@@ -114,22 +144,19 @@ export default function LoginPage() {
                 </Link>
               </div>
 
-              {error && (
-                <p className="text-error-600 text-sm">{error}</p>
-              )}
+              {/* Error message */}
+              {error && <p className="text-error-600 text-sm">{error}</p>}
 
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="w-full"
-              >
-                {isLoading ? 'Signing in...' : 'Sign In'}
+              {/* Submit */}
+              <Button type="submit" disabled={isLoading} className="w-full">
+                {isLoading ? 'Signing in…' : 'Sign In'}
               </Button>
             </form>
 
+            {/* Sign‑up CTA */}
             <div className="mt-6 text-center">
               <p className="text-gray-600 dark:text-gray-400">
-                Don't have an account?{' '}
+                Don&apos;t have an account?{' '}
                 <Link
                   href="/auth/signup"
                   className="text-primary-600 dark:text-primary-400 hover:underline"

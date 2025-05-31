@@ -1,17 +1,16 @@
-import express from 'express';
-import { prisma } from '../../db/prisma';
-import {Request, Response} from 'express';
-import bcrypt from 'bcrypt';
-
+import express from "express";
+import { prisma } from "../../db/prisma";
+import { Request, Response } from "express";
+import bcrypt from "bcrypt";
 
 // Signup controller
-export const signupController = async (req: Request, res: Response):Promise<any> => {
+export const signupController = async (req: Request, res: Response): Promise<any> => {
   try {
     const { name, email, password } = req.body;
 
     // Validate input
     if (!email || !password || !name) {
-      return res.status(400).json({ error: 'Name, email, and password are required.' });
+      return res.status(400).json({ error: "Name, email, and password are required." });
     }
 
     // Check if user already exists
@@ -20,7 +19,7 @@ export const signupController = async (req: Request, res: Response):Promise<any>
     });
 
     if (existingUser) {
-      return res.status(409).json({ error: 'User already exists.' });
+      return res.status(409).json({ error: "User already exists." });
     }
 
     // Hash the password
@@ -36,21 +35,23 @@ export const signupController = async (req: Request, res: Response):Promise<any>
       },
     });
 
-    return res.status(201).json({ message: 'User created successfully.', userId: newUser.id });
+    return res.status(201).json({ message: "User created successfully.", userId: newUser.id });
   } catch (error) {
-    console.error('Error in signup:', error);
-    return res.status(500).json({ error: 'Internal server error.' });
+    console.error("Error in signup:", error);
+    return res.status(500).json({ error: "Internal server error." });
   }
 };
 
 // Signin controller using localstorage session for 7 Days and Password compare
-export const signinController = async (req: Request, res: Response):Promise<any> => {
+export const signinController = async (req: Request, res: Response): Promise<any> => {
   try {
     const { email, password } = req.body;
-    console.log(req.body);
+    console.log("Received body:", req.body);
+    console.log("Email:", email);
+    console.log("Password:", password);
 
     if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required.' });
+      return res.status(400).json({ error: "Email and password are required." });
     }
 
     const user = await prisma.user.findUnique({
@@ -58,17 +59,17 @@ export const signinController = async (req: Request, res: Response):Promise<any>
     });
 
     if (!user) {
-      return res.status(404).json({ error: 'User not found.' });
+      return res.status(404).json({ error: "User not found." });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      return res.status(401).json({ error: 'Invalid credentials.' });
+      return res.status(401).json({ error: "Invalid credentials." });
     }
 
     // Send minimal user data back
     return res.status(200).json({
-      message: 'Signin successful.',
+      message: "Signin successful.",
       user: {
         id: user.id,
         name: user.name,
@@ -76,7 +77,7 @@ export const signinController = async (req: Request, res: Response):Promise<any>
       },
     });
   } catch (error) {
-    console.error('Error in signin:', error);
-    return res.status(500).json({ error: 'Internal server error.' });
+    console.error("Error in signin:", error);
+    return res.status(500).json({ error: "Internal server error." });
   }
 };

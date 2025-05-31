@@ -1,37 +1,71 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import Link from 'next/link';
-import { User, Mail, Lock, ArrowRight } from 'lucide-react';
-import Button from '@/components/ui/Button';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import Link from "next/link";
+import { User, Mail, Lock, ArrowRight } from "lucide-react";
+import Button from "@/components/ui/Button";
 
+/**
+ * Signup page for the Kids E‑Commerce project.
+ *
+ * – Validates that password & confirmPassword match before submission.
+ * – Sends a POST request to /auth/signup (base URL configurable via env var).
+ * – Shows inline error message and disables the submit button while loading.
+ * – Redirects to the login page (with a query flag) on success.
+ */
 export default function SignupPage() {
+  const router = useRouter();
+
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Prefer NEXT_PUBLIC_API_URL so it works on Vercel/render without code changes
+  const API_URL = process.env.NEXT_PUBLIC_API_URL
+    ? `${process.env.NEXT_PUBLIC_API_URL}/auth/signup`
+    : "http://localhost:5000/api/v1/auth/signup";
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
+    // Basic client‑side validation
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      setError("Passwords do not match");
       return;
     }
 
     setIsLoading(true);
-
     try {
-      // Handle signup logic here
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulated API call
-    } catch (err) {
-      setError('Failed to create account');
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: formData.name.trim(),
+          email: formData.email.trim(),
+          password: formData.password,
+        }),
+      });
+
+      if (!res.ok) {
+        // Attempt to read message from backend, else fall back
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.message || "Failed to create account");
+      }
+
+      // Success! Optionally you can store tokens here
+      router.push("/auth/login?registered=true");
+    } catch (err: any) {
+      setError(err.message);
     } finally {
       setIsLoading(false);
     }
@@ -54,6 +88,7 @@ export default function SignupPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Full name */}
               <div>
                 <label className="block text-sm font-medium mb-2">
                   Full Name
@@ -63,7 +98,9 @@ export default function SignupPage() {
                   <input
                     type="text"
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
                     className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-800"
                     placeholder="John Doe"
                     required
@@ -71,6 +108,7 @@ export default function SignupPage() {
                 </div>
               </div>
 
+              {/* Email */}
               <div>
                 <label className="block text-sm font-medium mb-2">
                   Email Address
@@ -80,7 +118,9 @@ export default function SignupPage() {
                   <input
                     type="email"
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
                     className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-800"
                     placeholder="you@example.com"
                     required
@@ -88,16 +128,17 @@ export default function SignupPage() {
                 </div>
               </div>
 
+              {/* Password */}
               <div>
-                <label className="block text-sm font-medium mb-2">
-                  Password
-                </label>
+                <label className="block text-sm font-medium mb-2">Password</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
                   <input
                     type="password"
                     value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, password: e.target.value })
+                    }
                     className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-800"
                     placeholder="••••••••"
                     required
@@ -105,6 +146,7 @@ export default function SignupPage() {
                 </div>
               </div>
 
+              {/* Confirm Password */}
               <div>
                 <label className="block text-sm font-medium mb-2">
                   Confirm Password
@@ -114,7 +156,12 @@ export default function SignupPage() {
                   <input
                     type="password"
                     value={formData.confirmPassword}
-                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        confirmPassword: e.target.value,
+                      })
+                    }
                     className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-800"
                     placeholder="••••••••"
                     required
@@ -122,16 +169,10 @@ export default function SignupPage() {
                 </div>
               </div>
 
-              {error && (
-                <p className="text-error-600 text-sm">{error}</p>
-              )}
+              {error && <p className="text-error-600 text-sm">{error}</p>}
 
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="w-full"
-              >
-                {isLoading ? 'Creating Account...' : 'Create Account'}
+              <Button type="submit" disabled={isLoading} className="w-full">
+                {isLoading ? "Creating Account..." : "Create Account"}
               </Button>
             </form>
 

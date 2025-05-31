@@ -1,41 +1,47 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { User, UserPlus, Search, Filter, MoreVertical, Edit, Trash2, Ban } from 'lucide-react';
+import {
+  User, UserPlus, Search, Filter,
+  MoreVertical, Edit, Trash2, Ban
+} from 'lucide-react';
 import Button from '@/components/ui/Button';
 import AdminTable from '@/components/admin/Table';
 
-const users = [
-  {
-    id: 1,
-    name: 'John Doe',
-    email: 'john@example.com',
-    role: 'Customer',
-    status: 'Active',
-    joined: '2024-01-15',
-  },
-  {
-    id: 2,
-    name: 'Jane Smith',
-    email: 'jane@example.com',
-    role: 'Admin',
-    status: 'Active',
-    joined: '2024-01-10',
-  },
-  {
-    id: 3,
-    name: 'Mike Johnson',
-    email: 'mike@example.com',
-    role: 'Customer',
-    status: 'Banned',
-    joined: '2024-01-05',
-  },
-];
-
 export default function UsersPage() {
+  const [users, setUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRole, setSelectedRole] = useState('all');
+
+  useEffect(() => {
+    async function fetchUsers() {
+      try {
+        const response = await fetch('http://localhost:5000/api/v1/admin/users');
+        const data = await response.json();
+        const transformedData = data.map((user) => ({
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role === 'ADMIN' ? 'Admin' : 'Customer',
+          status: user.isActive ? 'Active' : 'Banned',
+          joined: new Date(user.createdAt).toISOString().split('T')[0],
+        }));
+        setUsers(transformedData);
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      }
+    }
+
+    fetchUsers();
+  }, []);
+
+  const filteredUsers = users.filter((user) => {
+    const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          user.email.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesRole = selectedRole === 'all' || user.role.toLowerCase() === selectedRole;
+    return matchesSearch && matchesRole;
+  });
 
   return (
     <div className="space-y-6">
@@ -83,24 +89,27 @@ export default function UsersPage() {
           </div>
 
           <AdminTable
-            data={users}
+            data={filteredUsers}
             columns={[
               {
                 header: 'User',
                 accessor: 'name',
-                cell: (value) => (
-                  <div className="flex items-center">
-                    <div className="w-8 h-8 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center mr-3">
-                      <User className="w-4 h-4 text-primary-600 dark:text-primary-400" />
-                    </div>
-                    <div>
-                      <div className="font-medium">{value}</div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">
-                        {users.find((user) => user.name === value)?.email}
+                cell: (value) => {
+                  const user = users.find((u) => u.name === value);
+                  return (
+                    <div className="flex items-center">
+                      <div className="w-8 h-8 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center mr-3">
+                        <User className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                      </div>
+                      <div>
+                        <div className="font-medium">{value}</div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                          {user?.email}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ),
+                  );
+                },
               },
               { header: 'Role', accessor: 'role' },
               {

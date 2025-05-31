@@ -46,6 +46,12 @@ export default function CollectionsPage() {
         </Button>
       </div>
 
+
+
+
+
+
+
       <div className="bg-white dark:bg-card rounded-xl shadow-sm">
         <div className="p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
@@ -116,11 +122,10 @@ export default function CollectionsPage() {
                 header: 'Status',
                 accessor: 'status',
                 cell: (value) => (
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    value === 'Active'
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${value === 'Active'
                       ? 'bg-green-100 text-green-800'
                       : 'bg-red-100 text-red-800'
-                  }`}>
+                    }`}>
                     {value}
                   </span>
                 ),
