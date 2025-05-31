@@ -20,6 +20,12 @@ model User {
   Address Address[]
 
   passwordResetToken passwordResetToken[]
+
+  ProductReview ProductReview[]
+
+  Ticket Ticket[]
+
+  Order Order[]
 }
 
 model Address {
@@ -64,6 +70,8 @@ model Product {
   collections Collection[]   @relation("ProductCollections")
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
+
+  ProductReview ProductReview[]
 }
 
 model ProductImage {
@@ -72,6 +80,18 @@ model ProductImage {
   productId String
   product   Product  @relation(fields: [productId], references: [id])
   createdAt DateTime @default(now())
+}
+
+model ProductReview {
+  id        String   @id @default(cuid())
+  productId String
+  userId    Int
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
 }
 
 model Category {
@@ -96,6 +116,50 @@ model Collection {
   updatedAt   DateTime  @updatedAt
 }
 
+model Ticket {
+  id          String    @id @default(cuid())
+  userId      Int
+  title       String
+  description String
+  status      Status    @default(ACTIVE)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  closedAt    DateTime?
+  user        User      @relation(fields: [userId], references: [id])
+}
+
+model coupon {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  status    Status   @default(ACTIVE)
+  discount  Float
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Order {
+  id        String   @id @default(cuid())
+  userId    Int
+  total     Float
+  status    Status   @default(ACTIVE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
+
+  payment payment[]
+}
+
+model payment {
+  id        String   @id @default(cuid())
+  orderId   String
+  amount    Float
+  status    Status   @default(ACTIVE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  order     Order    @relation(fields: [orderId], references: [id])
+}
+
 enum Status {
   ACTIVE
   INACTIVE
@@ -111,3 +175,28 @@ enum Role {
   USER
   ADMIN
 }
+
+enum ticketStatus {
+  OPEN
+  IN_PROGRESS
+  CLOSED
+  REOPENED
+}
+
+enum ticketPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum ticketCategory {
+  GENERAL
+  TECHNICAL
+  BILLING
+  OTHER
+}
+
+
+// Setting up the database connection
+
+

@@ -2,9 +2,13 @@ import { Request, Response } from 'express';
 import { prisma } from '../../db/prisma';
 
 // Create a new collection
-export const createCollection = async (req: Request, res: Response) => {
+export const createCollection = async (req: Request, res: Response): Promise<any> => {
   try {
     const { name, description, imageUrl, status } = req.body;
+
+    if (!name ) {
+      return res.status(400).json({ error: 'name field is required' });
+    }
     const collection = await prisma.collection.create({
       data: {
         name,

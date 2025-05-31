@@ -1,55 +1,125 @@
 'use client';
 
-import { useState, FormEvent, ChangeEvent } from 'react';
-import { motion } from 'framer-motion';
+import { useState, FormEvent, ChangeEvent, useEffect } from 'react';
+
 import { Plus, Search, Filter, Edit, Trash2, Image as ImageIcon } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import AdminTable from '@/components/admin/Table';
 import Image from 'next/image';
 import Modal from '@/components/ui/Modal';
-// import Modal from '@/components/ui/Modal';
 
-const categories = [
-  {
-    id: 1,
-    name: 'Face Care',
-    description: 'Nourish and protect your skin',
-    image: 'https://images.pexels.com/photos/3762875/pexels-photo-3762875.jpeg',
-    products: 45,
-    status: 'Active',
-  },
-  {
-    id: 2,
-    name: 'Body Care',
-    description: 'Pamper your body naturally',
-    image: 'https://images.pexels.com/photos/3997373/pexels-photo-3997373.jpeg',
-    products: 32,
-    status: 'Active',
-  },
-];
+
+
 
 export default function CategoriesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
-  // const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [categories, setCategories] = useState<any[]>([]);
   const [categoryData, setCategoryData] = useState({
     name: '',
     description: '',
     imageUrl: '',
   });
+  const [selectedCategory, setSelectedCategory] = useState<any | null>(null);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>): void {
-    throw new Error('Function not implemented.');
-  }
+  // Fetch categories from API
+  useEffect(() => {
+    async function fetchCategories() {
+      try {
+        const response = await fetch('http://localhost:5000/api/v1/categories');
+        const data = await response.json();
+        setCategories(data);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    }
+    fetchCategories();
+  }, []);
 
-  function handleInputChange(event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void {
+  // Create a new category
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    try {
+      const response = await fetch('http://localhost:5000/api/v1/categories', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(categoryData),
+      });
+      const data = await response.json();
+      setCategories((prev) => [...prev, data]);
+      setCategoryData({ name: '', description: '', imageUrl: '' });
+      setIsAddModalOpen(false);
+    } catch (error) {
+      console.error('Error creating category:', error);
+    }
+  };
+
+  // Edit a category
+  const handleEditCategory = async (id: number) => {
+    try {
+      const categoryToEdit = categories.find((category) => category.id === id);
+      setSelectedCategory(categoryToEdit);
+
+      setCategoryData({
+        name: categoryToEdit?.name || '',
+        description: categoryToEdit?.description || '',
+        imageUrl: categoryToEdit?.image || '',
+      });
+      setIsAddModalOpen(true);
+    } catch (error) {
+      console.error('Error editing category:', error);
+    }
+  };
+
+  // Update the category
+  const handleUpdateCategory = async () => {
+    if (!selectedCategory) return;
+    
+    try {
+      const response = await fetch(`http://localhost:5000/api/v1/categories/${selectedCategory.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(categoryData),
+      });
+      const data = await response.json();
+      setCategories((prev) => 
+        prev.map((category) => 
+          category.id === selectedCategory.id ? { ...category, ...data } : category
+        )
+      );
+      setCategoryData({ name: '', description: '', imageUrl: '' });
+      setSelectedCategory(null);
+      setIsAddModalOpen(false);
+    } catch (error) {
+      console.error('Error updating category:', error);
+    }
+  };
+
+  // Delete a category
+  const handleDeleteCategory = async (id: number) => {
+    try {
+      await fetch(`http://localhost:5000/api/v1/categories/${id}`, {
+        method: 'DELETE',
+      });
+      setCategories((prev) => prev.filter((category) => category.id !== id));
+    } catch (error) {
+      console.error('Error deleting category:', error);
+    }
+  };
+
+  const handleInputChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = event.target;
     setCategoryData((prev) => ({
       ...prev,
       [name]: value,
     }));
-  }
+  };
 
   return (
     <div className="space-y-6">
@@ -66,13 +136,18 @@ export default function CategoriesPage() {
         </Button>
       </div>
 
-
 {/* Modal */}
 {isAddModalOpen && (
-  <Modal onClose={() => setIsAddModalOpen(false)}>
-    <div className="p-8 max-w-lg mx-auto bg-white rounded-lg shadow-xl">
-      <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">Add New Category</h2>
-      <form onSubmit={handleSubmit}>
+  <Modal 
+    onClose={() => setIsAddModalOpen(false)} 
+    isOpen={isAddModalOpen} 
+    title={selectedCategory ? 'Edit Category' : 'Add New Category'}
+  >
+    {/* <div className="p-8 max-w-lg mx-auto bg-white rounded-lg shadow-xl"> */}
+      {/* <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">
+        {selectedCategory ? 'Edit Category' : 'Add New Category'}
+      </h2> */}
+      <form onSubmit={selectedCategory ? handleUpdateCategory : handleSubmit}>
         <div className="mb-6">
           <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
             Category Name
@@ -129,17 +204,14 @@ export default function CategoriesPage() {
             type="submit"
             className="px-6 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300"
           >
-            Save Category
+            {selectedCategory ? 'Update Category' : 'Save Category'}
           </Button>
         </div>
       </form>
-    </div>
+    {/* </div> */}
   </Modal>
 )}
 
-
-
-      
 
       <div className="bg-white dark:bg-card rounded-xl shadow-sm">
         <div className="p-6">
@@ -211,11 +283,13 @@ export default function CategoriesPage() {
                 header: 'Status',
                 accessor: 'status',
                 cell: (value) => (
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    value === 'Active'
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-red-100 text-red-800'
-                  }`}>
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      value === 'Active'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-red-100 text-red-800'
+                    }`}
+                  >
                     {value}
                   </span>
                 ),
@@ -223,12 +297,12 @@ export default function CategoriesPage() {
               {
                 header: 'Actions',
                 accessor: 'id',
-                cell: () => (
+                cell: (id) => (
                   <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm">
+                    <Button variant="ghost" size="sm" onClick={() => handleEditCategory(id)}>
                       <Edit className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="sm">
+                    <Button variant="ghost" size="sm" onClick={() => handleDeleteCategory(id)}>
                       <Trash2 className="w-4 h-4 text-error-600" />
                     </Button>
                   </div>

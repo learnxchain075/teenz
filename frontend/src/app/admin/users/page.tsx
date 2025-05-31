@@ -38,7 +38,7 @@ export default function UsersPage() {
 
   const filteredUsers = users.filter((user) => {
     const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          user.email.toLowerCase().includes(searchQuery.toLowerCase());
+      user.email.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesRole = selectedRole === 'all' || user.role.toLowerCase() === selectedRole;
     return matchesSearch && matchesRole;
   });
@@ -116,11 +116,10 @@ export default function UsersPage() {
                 header: 'Status',
                 accessor: 'status',
                 cell: (value) => (
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    value === 'Active'
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${value === 'Active'
                       ? 'bg-green-100 text-green-800'
                       : 'bg-red-100 text-red-800'
-                  }`}>
+                    }`}>
                     {value}
                   </span>
                 ),
