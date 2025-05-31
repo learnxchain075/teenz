@@ -1,27 +1,35 @@
 'use client';
 
 import { useState, FormEvent, ChangeEvent, useEffect } from 'react';
-
 import { Plus, Search, Filter, Edit, Trash2, Image as ImageIcon } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import AdminTable from '@/components/admin/Table';
 import Image from 'next/image';
 import Modal from '@/components/ui/Modal';
 
-
-
+// Define Category interface for type safety
+interface Category {
+  id: number;
+  name: string;
+  description?: string;
+  image?: string;
+  products?: number;
+  status?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
 
 export default function CategoriesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [categories, setCategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [categoryData, setCategoryData] = useState({
     name: '',
     description: '',
-    imageUrl: '',
+    image: '', // Changed from imageUrl to match API response
   });
-  const [selectedCategory, setSelectedCategory] = useState<any | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
 
   // Fetch categories from API
   useEffect(() => {
@@ -40,7 +48,6 @@ export default function CategoriesPage() {
   // Create a new category
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
     try {
       const response = await fetch('http://localhost:5000/api/v1/categories', {
         method: 'POST',
@@ -51,7 +58,7 @@ export default function CategoriesPage() {
       });
       const data = await response.json();
       setCategories((prev) => [...prev, data]);
-      setCategoryData({ name: '', description: '', imageUrl: '' });
+      setCategoryData({ name: '', description: '', image: '' });
       setIsAddModalOpen(false);
     } catch (error) {
       console.error('Error creating category:', error);
@@ -62,14 +69,15 @@ export default function CategoriesPage() {
   const handleEditCategory = async (id: number) => {
     try {
       const categoryToEdit = categories.find((category) => category.id === id);
-      setSelectedCategory(categoryToEdit);
-
-      setCategoryData({
-        name: categoryToEdit?.name || '',
-        description: categoryToEdit?.description || '',
-        imageUrl: categoryToEdit?.image || '',
-      });
-      setIsAddModalOpen(true);
+      if (categoryToEdit) {
+        setSelectedCategory(categoryToEdit);
+        setCategoryData({
+          name: categoryToEdit.name || '',
+          description: categoryToEdit.description || '',
+          image: categoryToEdit.image || '',
+        });
+        setIsAddModalOpen(true);
+      }
     } catch (error) {
       console.error('Error editing category:', error);
     }
@@ -78,7 +86,6 @@ export default function CategoriesPage() {
   // Update the category
   const handleUpdateCategory = async () => {
     if (!selectedCategory) return;
-    
     try {
       const response = await fetch(`http://localhost:5000/api/v1/categories/${selectedCategory.id}`, {
         method: 'PUT',
@@ -88,12 +95,12 @@ export default function CategoriesPage() {
         body: JSON.stringify(categoryData),
       });
       const data = await response.json();
-      setCategories((prev) => 
-        prev.map((category) => 
+      setCategories((prev) =>
+        prev.map((category) =>
           category.id === selectedCategory.id ? { ...category, ...data } : category
         )
       );
-      setCategoryData({ name: '', description: '', imageUrl: '' });
+      setCategoryData({ name: '', description: '', image: '' });
       setSelectedCategory(null);
       setIsAddModalOpen(false);
     } catch (error) {
@@ -136,82 +143,93 @@ export default function CategoriesPage() {
         </Button>
       </div>
 
-{/* Modal */}
-{isAddModalOpen && (
-  <Modal 
-    onClose={() => setIsAddModalOpen(false)} 
-    isOpen={isAddModalOpen} 
-    title={selectedCategory ? 'Edit Category' : 'Add New Category'}
-  >
-    {/* <div className="p-8 max-w-lg mx-auto bg-white rounded-lg shadow-xl"> */}
-      {/* <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">
-        {selectedCategory ? 'Edit Category' : 'Add New Category'}
-      </h2> */}
-      <form onSubmit={selectedCategory ? handleUpdateCategory : handleSubmit}>
-        <div className="mb-6">
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-            Category Name
-          </label>
-          <input
-            id="name"
-            name="name"
-            type="text"
-            value={categoryData.name}
-            onChange={handleInputChange}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-300"
-            placeholder="Enter category name"
-          />
-        </div>
-
-        <div className="mb-6">
-          <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-            Description
-          </label>
-          <textarea
-            id="description"
-            name="description"
-            value={categoryData.description}
-            onChange={handleInputChange}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-300"
-            placeholder="Enter description"
-            rows={4}
-          />
-        </div>
-
-        <div className="mb-6">
-          <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700 mb-2">
-            Image URL
-          </label>
-          <input
-            id="imageUrl"
-            name="imageUrl"
-            type="text"
-            value={categoryData.imageUrl}
-            onChange={handleInputChange}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-300"
-            placeholder="Enter image URL"
-          />
-        </div>
-
-        <div className="flex justify-end space-x-4">
-          <Button
-            onClick={() => setIsAddModalOpen(false)}
-            className="px-6 py-2 text-sm font-semibold bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition duration-300"
+      {/* Modal */}
+      {isAddModalOpen && (
+        <Modal
+          onClose={() => {
+            setIsAddModalOpen(false);
+            setCategoryData({ name: '', description: '', image: '' });
+            setSelectedCategory(null);
+          }}
+          isOpen={isAddModalOpen}
+          title={selectedCategory ? 'Edit Category' : 'Add New Category'}
+        >
+          <form
+            onSubmit={(event: FormEvent<HTMLFormElement>) => {
+              event.preventDefault();
+              if (selectedCategory) {
+                handleUpdateCategory();
+              } else {
+                handleSubmit(event);
+              }
+            }}
           >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            className="px-6 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300"
-          >
-            {selectedCategory ? 'Update Category' : 'Save Category'}
-          </Button>
-        </div>
-      </form>
-    {/* </div> */}
-  </Modal>
-)}
+            <div className="mb-6">
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                Category Name
+              </label>
+              <input
+                id="name"
+                name="name"
+                type="text"
+                value={categoryData.name}
+                onChange={handleInputChange}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-300"
+                placeholder="Enter category name"
+              />
+            </div>
 
+            <div className="mb-6">
+              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+                Description
+              </label>
+              <textarea
+                id="description"
+                name="description"
+                value={categoryData.description}
+                onChange={handleInputChange}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-300"
+                placeholder="Enter description"
+                rows={4}
+              />
+            </div>
+
+            <div className="mb-6">
+              <label htmlFor="image" className="block text-sm font-medium text-gray-700 mb-2">
+                Image URL
+              </label>
+              <input
+                id="image"
+                name="image"
+                type="text"
+                value={categoryData.image}
+                onChange={handleInputChange}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-300"
+                placeholder="Enter image URL"
+              />
+            </div>
+
+            <div className="flex justify-end space-x-4">
+              <Button
+                onClick={() => {
+                  setIsAddModalOpen(false);
+                  setCategoryData({ name: '', description: '', image: '' });
+                  setSelectedCategory(null);
+                }}
+                className="px-6 py-2 text-sm font-semibold bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition duration-300"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="px-6 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300"
+              >
+                {selectedCategory ? 'Update Category' : 'Save Category'}
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
 
       <div className="bg-white dark:bg-card rounded-xl shadow-sm">
         <div className="p-6">
@@ -277,7 +295,7 @@ export default function CategoriesPage() {
               {
                 header: 'Products',
                 accessor: 'products',
-                cell: (value) => value,
+                cell: (value) => value || 0,
               },
               {
                 header: 'Status',
@@ -290,7 +308,7 @@ export default function CategoriesPage() {
                         : 'bg-red-100 text-red-800'
                     }`}
                   >
-                    {value}
+                    {value || 'Unknown'}
                   </span>
                 ),
               },
