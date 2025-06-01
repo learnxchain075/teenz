@@ -27,34 +27,35 @@ export const getAllUsers = async (req: Request, res: Response): Promise<any> => 
 
 // Get user by ID
 
-export const getCurrentUser = async (req: Request, res: Response, next: NextFunction) :Promise<any> => {
-  const userId = req.user?.id;
+export const getCurrentUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) : Promise<any> => {
+  const user = (req as any).user;
 
-  if (!userId) {
+  if (!user?.id) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.id },
       include: {
         Address: true,
-        passwordResetToken: false, // or true, if needed
         ProductReview: true,
         Ticket: true,
         Order: true,
       },
     });
 
-    if (!user) {
+    if (!dbUser) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Don't expose password
-    const { password, ...safeUser } = user;
-
+    const { password, ...safeUser } = dbUser;
     res.status(200).json(safeUser);
   } catch (error) {
-    next(handlePrismaError(error));
+    next(error);
   }
 };

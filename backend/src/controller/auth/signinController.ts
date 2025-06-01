@@ -1,12 +1,13 @@
-import express from "express";
+
 import { prisma } from "../../db/prisma";
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
+import jwt from 'jsonwebtoken';
 
 // Signup controller
 export const signupController = async (req: Request, res: Response): Promise<any> => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password,role } = req.body;
 
     // Validate input
     if (!email || !password || !name) {
@@ -31,6 +32,7 @@ export const signupController = async (req: Request, res: Response): Promise<any
       data: {
         name,
         email,
+        role,
         password: hashedPassword,
       },
     });
@@ -43,20 +45,17 @@ export const signupController = async (req: Request, res: Response): Promise<any
 };
 
 // Signin controller using localstorage session for 7 Days and Password compare
+
+// SIGNIN CONTROLLER FIXED ✅
 export const signinController = async (req: Request, res: Response): Promise<any> => {
   try {
     const { email, password } = req.body;
-    console.log("Received body:", req.body);
-    console.log("Email:", email);
-    console.log("Password:", password);
 
     if (!email || !password) {
       return res.status(400).json({ error: "Email and password are required." });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
+    const user = await prisma.user.findUnique({ where: { email } });
 
     if (!user) {
       return res.status(404).json({ error: "User not found." });
@@ -67,13 +66,22 @@ export const signinController = async (req: Request, res: Response): Promise<any
       return res.status(401).json({ error: "Invalid credentials." });
     }
 
-    // Send minimal user data back
+    // ✅ FIXED: Use `id` instead of `userId`
+    const token = jwt.sign(
+      { id: user.id, email: user.email },
+      process.env.JWT_SECRET!,
+      { expiresIn: '30d' }
+    );
+
     return res.status(200).json({
       message: "Signin successful.",
+      token,
       user: {
         id: user.id,
         name: user.name,
         email: user.email,
+        role: user.role, // Include role if needed
+        isActive: user.isActive, // Include isActive status
       },
     });
   } catch (error) {
