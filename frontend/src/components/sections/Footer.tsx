@@ -58,11 +58,11 @@ export default function Footer({
                 </div>
                 <div className="flex items-center">
                   <Phone className="w-5 h-5 text-primary-600 dark:text-primary-400 mr-3" />
-                  <span className="text-gray-600 dark:text-gray-400">+1 (555) 123-4567</span>
+                  <span className="text-gray-600 dark:text-gray-400">+91 0000000000</span>
                 </div>
                 <div className="flex items-center">
                   <Mail className="w-5 h-5 text-primary-600 dark:text-primary-400 mr-3" />
-                  <span className="text-gray-600 dark:text-gray-400">contact@example.com</span>
+                  <span className="text-gray-600 dark:text-gray-400">contact@teenzskin.com</span>
                 </div>
               </div>
             )}
