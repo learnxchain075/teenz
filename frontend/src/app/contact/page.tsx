@@ -12,6 +12,7 @@ export default function ContactPage() {
     subject: '',
     message: '',
   });
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState('');
@@ -22,7 +23,7 @@ export default function ContactPage() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/api/contact', {
+      const res = await fetch('http://localhost:5000/api/v1/contact', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -30,12 +31,16 @@ export default function ContactPage() {
         body: JSON.stringify(formData),
       });
 
-      if (!response.ok) throw new Error('Failed to send message');
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to send message');
+      }
 
       setIsSuccess(true);
       setFormData({ name: '', email: '', subject: '', message: '' });
-    } catch (err) {
-      setError('Failed to send message. Please try again.');
+    } catch (err: any) {
+      setError(err.message || 'Something went wrong. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -64,7 +69,7 @@ export default function ContactPage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-            {/* Contact Information */}
+            {/* Contact Info */}
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}

@@ -5,7 +5,8 @@ const nextConfig = {
 
 
   images: {
-  domains: ['chatgpt.com', 'images.pexels.com', 'images.unsplash.com'],
+  domains: ['chatgpt.com', 'images.pexels.com', 'images.unsplash.com', 'images.pexels.com',
+    'media.istockphoto.com','res.cloudinary.com', 'cdn.pixabay.com', 'images.unsplash.com', 'cdn.pixabay.com', 'images.pexels.com','collection.cloudinary.com','drive.google.com'],
 },
 
   experimental: {

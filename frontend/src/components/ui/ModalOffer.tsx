@@ -14,9 +14,11 @@ interface ModalOfferProps {
   onClose?: () => void;
 }
 
+const LOCAL_KEY = 'popup_subscribed';
+
 export default function ModalOffer({
   headline = "Wait! Here's 10% Off",
-  subtext = "Subscribe now to claim your discount.",
+  subtext = 'Subscribe now to claim your discount.',
   inputType = 'email',
   dismissable = true,
   style = 'promo-card',
@@ -29,6 +31,9 @@ export default function ModalOffer({
   const [error, setError] = useState('');
 
   useEffect(() => {
+    const hasSubscribed = localStorage.getItem(LOCAL_KEY);
+    if (hasSubscribed) return;
+
     const timeout = setTimeout(() => {
       setIsVisible(true);
     }, 5000);
@@ -58,17 +63,25 @@ export default function ModalOffer({
     setIsSubmitting(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const res = await fetch('http://localhost:5000/api/v1/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || 'Failed to subscribe');
+
+      localStorage.setItem(LOCAL_KEY, 'true');
       setIsSuccess(true);
       setEmail('');
-      
-      // Close modal after success
+
       setTimeout(() => {
         handleClose();
       }, 3000);
-    } catch (err) {
-      setError('Something went wrong. Please try again.');
+    } catch (err: any) {
+      setError(err.message || 'Something went wrong. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -78,19 +91,21 @@ export default function ModalOffer({
     <AnimatePresence>
       {isVisible && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* BACKDROP */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
             onClick={dismissable ? handleClose : undefined}
           />
-          
+
+          {/* MODAL CONTENT */}
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
-            className="relative w-full max-w-lg bg-white dark:bg-gray-900 rounded-2xl shadow-xl overflow-hidden"
+            className="relative z-50 w-full max-w-lg bg-white dark:bg-gray-900 rounded-2xl shadow-xl overflow-hidden"
           >
             {dismissable && (
               <button
@@ -103,8 +118,8 @@ export default function ModalOffer({
             )}
 
             <div className="relative p-8">
-              {/* Background Pattern */}
-              <div className="absolute inset-0 opacity-5">
+              {/* BACKGROUND DESIGN */}
+              <div className="absolute inset-0 opacity-5 pointer-events-none z-0">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary-500 to-transparent" />
               </div>
 
@@ -112,7 +127,7 @@ export default function ModalOffer({
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="text-center"
+                  className="text-center relative z-10"
                 >
                   <div className="inline-flex items-center justify-center w-16 h-16 mb-6 rounded-full bg-primary-100 dark:bg-primary-900">
                     <Sparkles className="w-8 h-8 text-primary-600 dark:text-primary-400" />
@@ -124,7 +139,7 @@ export default function ModalOffer({
                 </motion.div>
               ) : (
                 <>
-                  <div className="text-center mb-8">
+                  <div className="text-center mb-8 relative z-10">
                     <motion.div
                       initial={{ opacity: 0, y: -20 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -133,7 +148,7 @@ export default function ModalOffer({
                       <Sparkles className="w-4 h-4 mr-2" />
                       Exclusive Offer
                     </motion.div>
-                    
+
                     <motion.h2
                       initial={{ opacity: 0, y: -20 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -142,7 +157,7 @@ export default function ModalOffer({
                     >
                       {headline}
                     </motion.h2>
-                    
+
                     <motion.p
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -158,7 +173,7 @@ export default function ModalOffer({
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 }}
                     onSubmit={handleSubmit}
-                    className="space-y-4"
+                    className="space-y-4 relative z-10"
                   >
                     <div>
                       <div className="relative">
@@ -175,7 +190,7 @@ export default function ModalOffer({
                         <motion.p
                           initial={{ opacity: 0, y: -10 }}
                           animate={{ opacity: 1, y: 0 }}
-                          className="mt-2 text-sm text-error-500"
+                          className="mt-2 text-sm text-red-500"
                         >
                           {error}
                         </motion.p>
@@ -199,7 +214,7 @@ export default function ModalOffer({
                     </Button>
 
                     <p className="text-xs text-center text-gray-500 dark:text-gray-400">
-                      By subscribing, you agree to our Terms of Service and Privacy Policy
+                      By subscribing, you agree to our Terms of Service and Privacy Policy.
                     </p>
                   </motion.form>
                 </>

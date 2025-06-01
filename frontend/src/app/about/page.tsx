@@ -35,14 +35,14 @@ export default function AboutPage() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Hero Section */}
         <div className="max-w-3xl mx-auto text-center mb-16">
-          <motion.h1 
+          <motion.h1
             className="text-4xl font-bold md:text-5xl mb-6"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
           >
             About Teenz Skin
           </motion.h1>
-          <motion.p 
+          <motion.p
             className="text-xl text-gray-600 dark:text-gray-400"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -53,7 +53,7 @@ export default function AboutPage() {
         </div>
 
         {/* Stats */}
-        <motion.div 
+        <motion.div
           className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-20"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -84,7 +84,7 @@ export default function AboutPage() {
               Today, we're proud to offer a comprehensive range of skincare solutions that combine the best of nature with cutting-edge science. Our products are formulated with carefully selected ingredients that are both gentle and effective.
             </p>
           </motion.div>
-          
+
           <motion.div
             initial={{ opacity: 0, x: 30 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -138,15 +138,15 @@ export default function AboutPage() {
               >
                 <div className="relative aspect-square">
                   <Image
-                    src={`https://images.pexels.com/photos/${[415829, 774909, 614810][index]}/pexels-photo-${[415829, 774909, 614810][index]}.jpeg`}
-                    alt="Team Member"
+                    src={`/team${index + 1}.jpg`} // assumes images are named team1.jpg, team2.jpg, team3.jpg in /public
+                    alt={`Team Member ${index + 1}`}
                     fill
-                    className="object-cover"
+                    className="object-cover rounded-xl"
                   />
                 </div>
                 <div className="p-6">
                   <h3 className="text-xl font-semibold mb-1">
-                    {['Sarah Johnson', 'Michael Chen', 'Emma Wilson'][index]}
+                    {['Tarun', 'Diksha', 'Rohit'][index]}
                   </h3>
                   <p className="text-gray-600 dark:text-gray-400">
                     {['Founder & CEO', 'Head of Research', 'Lead Formulator'][index]}
@@ -156,6 +156,7 @@ export default function AboutPage() {
             ))}
           </div>
         </div>
+
       </div>
     </div>
   );

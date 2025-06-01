@@ -46,22 +46,22 @@ export default function Home() {
       />
       <About />
       <Testimonials />
-      <BlogPreview
+      {/* <BlogPreview
         max={3}
         layout="grid"
         headline="Latest from the Blog"
         showDate={true}
         showAuthor={true}
         cta="Read More"
-      />
-      <InstagramFeed
+      /> */}
+      {/* <InstagramFeed
         username="@yourbrand"
         posts={6}
         columns={3}
         cta="Shop the Look"
         style="masonry"
-      />
-      <BrandLogos />
+      /> */}
+      {/* <BrandLogos /> */}
       <AppPromo
         headline="Get our App"
         subtext="Shop faster and easier on our mobile app."
@@ -74,7 +74,7 @@ export default function Home() {
         layout="accordion"
         headline="Frequently Asked Questions"
       />
-      <Newsletter style="card" variant="primary" offer="Get 10% off your first order" />
+      {/* <Newsletter style="card" variant="primary" offer="Get 10% off your first order" /> */}
     </div>
   );
 }

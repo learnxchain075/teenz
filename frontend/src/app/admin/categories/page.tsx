@@ -260,74 +260,74 @@ export default function CategoriesPage() {
               </Button>
             </div>
           </div>
+<AdminTable
+  data={categories}
+  columns={[
+    {
+      header: 'Category',
+      accessor: 'name',
+      cell: (value, row) => (
+        <div className="flex items-center">
+          {row?.image ? (
+            <div className="relative w-12 h-12 rounded-lg overflow-hidden mr-3">
+              <Image
+                src={row.image}
+                alt={row.name || ''}
+                fill
+                className="object-cover"
+              />
+            </div>
+          ) : (
+            <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center mr-3">
+              <ImageIcon className="w-6 h-6 text-gray-400" />
+            </div>
+          )}
+          <div>
+            <div className="font-medium">{row?.name}</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">
+              {row?.description}
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      header: 'Products',
+      accessor: 'products',
+      cell: (value) => (Array.isArray(value) ? value.length : 0),
+    },
+    {
+      header: 'Status',
+      accessor: 'status',
+      cell: (value) => (
+        <span
+          className={`px-2 py-1 rounded-full text-xs font-medium ${
+            value === 'Active'
+              ? 'bg-green-100 text-green-800'
+              : 'bg-red-100 text-red-800'
+          }`}
+        >
+          {value || 'Unknown'}
+        </span>
+      ),
+    },
+    {
+      header: 'Actions',
+      accessor: 'id',
+      cell: (id) => (
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={() => handleEditCategory(id)}>
+            <Edit className="w-4 h-4" />
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => handleDeleteCategory(id)}>
+            <Trash2 className="w-4 h-4 text-error-600" />
+          </Button>
+        </div>
+      ),
+    },
+  ]}
+/>
 
-          <AdminTable
-            data={categories}
-            columns={[
-              {
-                header: 'Category',
-                accessor: 'name',
-                cell: (value, row) => (
-                  <div className="flex items-center">
-                    {row?.image ? (
-                      <div className="relative w-12 h-12 rounded-lg overflow-hidden mr-3">
-                        <Image
-                          src={row.image}
-                          alt={row.name || ''}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                    ) : (
-                      <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center mr-3">
-                        <ImageIcon className="w-6 h-6 text-gray-400" />
-                      </div>
-                    )}
-                    <div>
-                      <div className="font-medium">{row?.name}</div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">
-                        {row?.description}
-                      </div>
-                    </div>
-                  </div>
-                ),
-              },
-              {
-                header: 'Products',
-                accessor: 'products',
-                cell: (value) => value || 0,
-              },
-              {
-                header: 'Status',
-                accessor: 'status',
-                cell: (value) => (
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      value === 'Active'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}
-                  >
-                    {value || 'Unknown'}
-                  </span>
-                ),
-              },
-              {
-                header: 'Actions',
-                accessor: 'id',
-                cell: (id) => (
-                  <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => handleEditCategory(id)}>
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleDeleteCategory(id)}>
-                      <Trash2 className="w-4 h-4 text-error-600" />
-                    </Button>
-                  </div>
-                ),
-              },
-            ]}
-          />
         </div>
       </div>
     </div>

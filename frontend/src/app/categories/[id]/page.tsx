@@ -2,81 +2,72 @@
 
 import { useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import ProductGrid from '@/components/products/ProductGrid';
-import { api } from '@/lib/api';
 import { useEffect, useState } from 'react';
-import type { Product } from '@/lib/types';
 import { Leaf, Sun, Droplets, Package } from 'lucide-react';
+import ProductGrid from '@/components/products/ProductGrid';
+import type { Product } from '@/lib/types';
 
-const categories = {
-  'face-care': {
-    title: 'Face Care',
-    description: 'Nourish and protect your skin',
-    image: 'https://images.pexels.com/photos/3762875/pexels-photo-3762875.jpeg',
-    icon: Leaf,
-    filters: ['Dry', 'Oily', 'Combination', 'Sensitive']
-  },
-  'body-care': {
-    title: 'Body Care',
-    description: 'Pamper your body naturally',
-    image: 'https://images.pexels.com/photos/3997373/pexels-photo-3997373.jpeg',
-    icon: Sun,
-    filters: ['Moisturizing', 'Exfoliating', 'Firming', 'Anti-aging']
-  },
-  'hair': {
-    title: 'Hair',
-    description: 'Healthy hair, naturally',
-    image: 'https://images.pexels.com/photos/3993447/pexels-photo-3993447.jpeg',
-    icon: Droplets,
-    filters: ['Dry', 'Oily', 'Damaged', 'Colored']
-  },
-  'essentials': {
-    title: 'Essentials',
-    description: 'Daily care essentials',
-    image: 'https://images.pexels.com/photos/6621462/pexels-photo-6621462.jpeg',
-    icon: Package,
-    filters: ['Bestsellers', 'New', 'Sets', 'Travel']
-  }
+const iconMap: Record<string, any> = {
+  Leaf,
+  Sun,
+  Droplets,
+  Package,
 };
 
 export default function CategoryPage() {
   const { id } = useParams();
-  const category = categories[id as keyof typeof categories];
-  const [products, setProducts] = useState<Product[]>([]);
+  const [category, setCategory] = useState<any | null>(null);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchCategory = async () => {
       try {
-        const data = await api.get(`/categories/${id}/products${selectedFilter ? `?filter=${selectedFilter}` : ''}`);
-        setProducts(data);
-      } catch (error) {
-        console.error('Error fetching products:', error);
+        const res = await fetch(`http://localhost:5000/api/v1/categories/${id}`);
+        const data = await res.json();
+        setCategory(data);
+        setAllProducts(data.products || []);
+        setFilteredProducts(data.products || []);
+      } catch (err) {
+        console.error('Error fetching category details:', err);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchProducts();
-  }, [id, selectedFilter]);
+    if (id) fetchCategory();
+  }, [id]);
 
-  if (!category) {
-    return <div>Category not found</div>;
-  }
+  useEffect(() => {
+    if (!selectedFilter) {
+      setFilteredProducts(allProducts);
+    } else {
+      const filtered = allProducts.filter(product =>
+        product.status.toLowerCase() === selectedFilter.toLowerCase()
+      );
+      setFilteredProducts(filtered);
+    }
+  }, [selectedFilter, allProducts]);
+
+  if (!category) return <div className="pt-32 text-center">Category not found</div>;
+
+  const Icon = iconMap[category.icon] || Package;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-24">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-24 mb-24">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-2xl mx-auto text-center mb-8">
-          <motion.h1 
-            className="text-3xl font-bold md:text-4xl mb-4"
+          <motion.h1
+            className="text-3xl font-bold md:text-4xl mb-4 flex justify-center items-center gap-2"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            {category.title}
+            <Icon className="w-6 h-6 text-primary-600 dark:text-primary-400" />
+            {category.name}
           </motion.h1>
-          <motion.p 
+          <motion.p
             className="text-xl text-gray-600 dark:text-gray-400"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -86,7 +77,7 @@ export default function CategoryPage() {
           </motion.p>
         </div>
 
-        <motion.div 
+        <motion.div
           className="flex flex-wrap justify-center gap-4 mb-12"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -102,7 +93,7 @@ export default function CategoryPage() {
           >
             All
           </button>
-          {category.filters.map((filter) => (
+          {['LOW_STOCK', 'ACTIVE', 'OUT_OF_STOCK'].map((filter) => (
             <button
               key={filter}
               onClick={() => setSelectedFilter(filter)}
@@ -112,7 +103,7 @@ export default function CategoryPage() {
                   : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
               }`}
             >
-              {filter}
+              {filter.replace('_', ' ')}
             </button>
           ))}
         </motion.div>
@@ -122,7 +113,7 @@ export default function CategoryPage() {
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
           </div>
         ) : (
-          <ProductGrid products={products} />
+          <ProductGrid products={filteredProducts} />
         )}
       </div>
     </div>

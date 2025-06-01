@@ -160,6 +160,31 @@ model payment {
   order     Order    @relation(fields: [orderId], references: [id])
 }
 
+model EmailSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  verified  Boolean  @default(false)
+  source    String?  // e.g. "popup", "footer", etc.
+}
+
+model ContactMessage {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String
+  subject   String
+  message   String
+  createdAt DateTime @default(now())
+}
+
+
+// add tag into product 
+
+// image in collection
+// image in category
+
+
 enum Status {
   ACTIVE
   INACTIVE

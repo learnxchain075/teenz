@@ -2,57 +2,47 @@
 
 import { useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
 import ProductGrid from '@/components/products/ProductGrid';
 import { api } from '@/lib/api';
-import { useEffect, useState } from 'react';
 import type { Product } from '@/lib/types';
-
-const collections = {
-  'summer-essentials': {
-    title: 'Summer Essentials',
-    description: 'Stay fresh and protected with our summer skincare collection',
-    image: 'https://images.pexels.com/photos/3762875/pexels-photo-3762875.jpeg'
-  },
-  'new-arrivals': {
-    title: 'New Arrivals',
-    description: 'Discover our latest products and innovations',
-    image: 'https://images.pexels.com/photos/2866119/pexels-photo-2866119.jpeg'
-  },
-  'bestsellers': {
-    title: 'Bestsellers',
-    description: 'Our most loved products by our customers',
-    image: 'https://images.pexels.com/photos/3997373/pexels-photo-3997373.jpeg'
-  },
-  'limited-edition': {
-    title: 'Limited Edition',
-    description: 'Special collections available for a limited time',
-    image: 'https://images.pexels.com/photos/6621462/pexels-photo-6621462.jpeg'
-  }
-};
 
 export default function CollectionPage() {
   const { id } = useParams();
-  const collection = collections[id as keyof typeof collections];
+  const [collection, setCollection] = useState<any | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    const fetchCollection = async () => {
+      try {
+        const res = await fetch(`http://localhost:5000/api/v1/collections/${id}`);
+        const data = await res.json();
+        setCollection(data);
+      } catch (err) {
+        console.error('Error fetching collection:', err);
+      }
+    };
+
     const fetchProducts = async () => {
       try {
         const data = await api.get(`/collections/${id}/products`);
         setProducts(data);
-      } catch (error) {
-        console.error('Error fetching products:', error);
+      } catch (err) {
+        console.error('Error fetching products:', err);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchProducts();
+    if (id) {
+      fetchCollection();
+      fetchProducts();
+    }
   }, [id]);
 
   if (!collection) {
-    return <div>Collection not found</div>;
+    return <div className="pt-32 text-center">Collection not found</div>;
   }
 
   return (
@@ -64,7 +54,7 @@ export default function CollectionPage() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            {collection.title}
+            {collection.name}
           </motion.h1>
           <motion.p 
             className="text-xl text-gray-600 dark:text-gray-400"

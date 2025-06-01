@@ -21,7 +21,8 @@ import {
   Grid,
   FileText,
   Star,
-  MessageCircle
+  MessageCircle,
+  
 } from 'lucide-react';
 import Logo from '@/components/ui/Logo';
 
@@ -32,12 +33,14 @@ const navigation = [
   { name: 'Collections', href: '/admin/collections', icon: FolderOpen },
   { name: 'Categories', href: '/admin/categories', icon: Grid },
   { name: 'Orders', href: '/admin/orders', icon: Package },
-  { name: 'Coupons', href: '/admin/coupons', icon: Tags },
-  { name: 'Blog', href: '/admin/blog', icon: FileText },
+  // { name: 'Coupons', href: '/admin/coupons', icon: Tags },
+  // { name: 'Blog', href: '/admin/blog', icon: FileText },
   { name: 'Reviews', href: '/admin/reviews', icon: Star },
-  { name: 'Tickets', href: '/admin/tickets', icon: MessageCircle },
-  { name: 'Analytics', href: '/admin/analytics', icon: BarChart2 },
-  { name: 'Settings', href: '/admin/settings', icon: Settings }
+  // { name: 'Tickets', href: '/admin/tickets', icon: MessageCircle },
+  { name: 'Announcements', href: '/admin/announcements', icon: Bell },
+  { name: 'Contact Messages', href: '/admin/contact-messages', icon: MessageCircle },
+  // { name: 'Analytics', href: '/admin/analytics', icon: BarChart2 },
+  // { name: 'Settings', href: '/admin/settings', icon: Settings }
 ];
 
 export default function AdminSidebar() {

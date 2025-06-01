@@ -2,14 +2,21 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Grid2X2, List, Search, SlidersHorizontal, X, Star, ShoppingCart } from 'lucide-react';
+import {
+  Grid2X2,
+  List,
+  Search,
+  SlidersHorizontal,
+  X,
+  Star,
+  ShoppingCart,
+} from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { api } from '@/lib/api';
 import type { Product } from '@/lib/types';
 import Link from 'next/link';
 
-const categories = ['Face Care', 'Body Care', 'Hair Care', 'Sun Protection'];
-const brands = ['Teenz Skin', 'Natural Care', 'Pure Beauty'];
+const categories = ['Face Care', 'Body Care', 'Hair Care', 'Sun Protection', 'Electronics'];
 const sortOptions = [
   { label: 'Price: Low to High', value: 'price-asc' },
   { label: 'Price: High to Low', value: 'price-desc' },
@@ -21,7 +28,6 @@ export default function ProductsPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 100]);
   const [minRating, setMinRating] = useState<number>(0);
   const [sortBy, setSortBy] = useState('newest');
@@ -36,49 +42,51 @@ export default function ProductsPage() {
 
   useEffect(() => {
     filterProducts();
-  }, [selectedCategories, selectedBrands, priceRange, minRating, sortBy, searchQuery, products]);
+  }, [selectedCategories, priceRange, minRating, sortBy, searchQuery, products]);
 
-  const fetchProducts = async () => {
-    try {
-      const data = await api.get('/products');
-      setProducts(data);
-      setIsLoading(false);
-    } catch (error) {
-      console.error('Error fetching products:', error);
-      setIsLoading(false);
+const fetchProducts = async () => {
+  try {
+    const res = await fetch('http://localhost:5000/api/v1/products');
+    if (!res.ok) {
+      throw new Error(`HTTP error! Status: ${res.status}`);
     }
-  };
+    const data = await res.json();
+    setProducts(data);
+    setIsLoading(false);
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    setIsLoading(false);
+  }
+};
+
 
   const filterProducts = () => {
     setIsLoading(true);
     let filtered = [...products];
 
-    // Apply filters
     if (selectedCategories.length > 0) {
-      filtered = filtered.filter(p => selectedCategories.includes(p.category));
+      filtered = filtered.filter((p) =>
+        selectedCategories.includes(p.category)
+      );
     }
 
-    if (selectedBrands.length > 0) {
-      filtered = filtered.filter(p => selectedBrands.includes(p.brand));
-    }
-
-    filtered = filtered.filter(p => 
-      p.price >= priceRange[0] && 
-      p.price <= priceRange[1] &&
-      p.rating >= minRating
+    filtered = filtered.filter(
+      (p) =>
+        p.price >= priceRange[0] &&
+        p.price <= priceRange[1] &&
+        (p.rating ?? 0) >= minRating
     );
 
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(p => 
-        p.name.toLowerCase().includes(query) ||
-        p.description.toLowerCase().includes(query) ||
-        p.category.toLowerCase().includes(query) ||
-        p.brand.toLowerCase().includes(query)
+      filtered = filtered.filter(
+        (p) =>
+          p.name.toLowerCase().includes(query) ||
+          p.description?.toLowerCase().includes(query) ||
+          p.category.toLowerCase().includes(query)
       );
     }
 
-    // Apply sorting
     switch (sortBy) {
       case 'price-asc':
         filtered.sort((a, b) => a.price - b.price);
@@ -87,10 +95,14 @@ export default function ProductsPage() {
         filtered.sort((a, b) => b.price - a.price);
         break;
       case 'newest':
-        filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        filtered.sort(
+          (a, b) =>
+            new Date(b.created_at).getTime() -
+            new Date(a.created_at).getTime()
+        );
         break;
       case 'bestsellers':
-        filtered.sort((a, b) => b.review_count - a.review_count);
+        filtered.sort((a, b) => (b.review_count ?? 0) - (a.review_count ?? 0));
         break;
     }
 
@@ -106,7 +118,7 @@ export default function ProductsPage() {
         viewMode === 'list' ? 'flex' : ''
       }`}
     >
-      <Link 
+      <Link
         href={`/products/${product.id}`}
         className={`relative ${viewMode === 'list' ? 'w-1/3' : 'aspect-square'}`}
       >
@@ -137,7 +149,7 @@ export default function ProductsPage() {
               <Star
                 key={i}
                 className={`w-4 h-4 ${
-                  i < product.rating
+                  i < (product.rating ?? 0)
                     ? 'text-yellow-400 fill-current'
                     : 'text-gray-300'
                 }`}
@@ -145,11 +157,11 @@ export default function ProductsPage() {
             ))}
           </div>
           <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
-            ({product.rating})
+            ({product.rating ?? 0})
           </span>
         </div>
         <div className="text-2xl font-bold text-primary-600 dark:text-primary-400 mb-4">
-          ${product.price.toFixed(2)}
+          ₹{product.price}
         </div>
         {viewMode === 'list' && (
           <p className="text-gray-600 dark:text-gray-400 mb-4">
@@ -158,10 +170,7 @@ export default function ProductsPage() {
         )}
         <div className="flex items-center justify-between">
           <span className="text-sm text-gray-500 dark:text-gray-400">
-            {product.category}
-          </span>
-          <span className="text-sm text-gray-500 dark:text-gray-400">
-            {product.brand}
+            {product.category.name}
           </span>
         </div>
       </div>
@@ -216,7 +225,10 @@ export default function ProductsPage() {
                         checked={selectedCategories.includes(category)}
                         onChange={(e) => {
                           if (e.target.checked) {
-                            setSelectedCategories([...selectedCategories, category]);
+                            setSelectedCategories([
+                              ...selectedCategories,
+                              category,
+                            ]);
                           } else {
                             setSelectedCategories(
                               selectedCategories.filter((c) => c !== category)
@@ -273,34 +285,6 @@ export default function ProductsPage() {
                     >
                       <Star className="w-6 h-6 fill-current" />
                     </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Brands */}
-              <div className="mb-6">
-                <h3 className="font-medium mb-3">Brands</h3>
-                <div className="space-y-2">
-                  {brands.map((brand) => (
-                    <label key={brand} className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={selectedBrands.includes(brand)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedBrands([...selectedBrands, brand]);
-                          } else {
-                            setSelectedBrands(
-                              selectedBrands.filter((b) => b !== brand)
-                            );
-                          }
-                        }}
-                        className="rounded border-gray-300 dark:border-gray-700 text-primary-600 focus:ring-primary-500"
-                      />
-                      <span className="ml-2 text-gray-700 dark:text-gray-300">
-                        {brand}
-                      </span>
-                    </label>
                   ))}
                 </div>
               </div>
