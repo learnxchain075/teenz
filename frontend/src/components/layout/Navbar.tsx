@@ -204,7 +204,7 @@ export default function Navbar() {
                 </Link>
               )}
 
-              <button
+              {/* <button
                 onClick={toggleTheme}
                 className="text-gray-700 dark:text-gray-200 hover:text-primary-600 dark:hover:text-primary-400"
               >
@@ -213,7 +213,7 @@ export default function Navbar() {
                 ) : (
                   <Moon className="h-5 w-5" />
                 )}
-              </button>
+              </button> */}
             </div>
           </div>
         </nav>

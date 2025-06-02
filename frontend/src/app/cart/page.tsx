@@ -40,7 +40,7 @@ export default function CartPage() {
                   Looks like you haven't added any items to your cart yet.
                 </p>
               </div>
-              
+
               <Link
                 href="/products"
                 className="inline-flex items-center px-4 py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 dark:bg-primary-400 dark:hover:bg-primary-500"
