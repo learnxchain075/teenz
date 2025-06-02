@@ -63,7 +63,7 @@ model Product {
   name        String
   price       Float
   stock       Int
-  status      ProductStatus
+  status      ProductStatus  @default(IN_STOCK)
   images      ProductImage[]
   categoryId  String
   category    Category       @relation(fields: [categoryId], references: [id])
@@ -72,6 +72,18 @@ model Product {
   updatedAt   DateTime       @updatedAt
 
   ProductReview ProductReview[]
+
+  productTag productTag[] @relation("ProductTags")
+
+  OrderItem OrderItem[]
+}
+
+model productTag {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  products  Product[] @relation("ProductTags")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 model ProductImage {
@@ -83,15 +95,27 @@ model ProductImage {
 }
 
 model ProductReview {
-  id        String   @id @default(cuid())
+  id        String              @id @default(cuid())
   productId String
   userId    Int
   rating    Int
   comment   String?
-  createdAt DateTime @default(now())
+  createdAt DateTime            @default(now())
+  status    ProductReviewStatus @default(PENDING)
 
   product Product @relation(fields: [productId], references: [id])
   user    User    @relation(fields: [userId], references: [id])
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  productId String
+  quantity  Int
+  price     Float
+
+  order   Order   @relation(fields: [orderId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
 }
 
 model Category {
@@ -134,20 +158,28 @@ model coupon {
   status    Status   @default(ACTIVE)
   discount  Float
   expiresAt DateTime
+  maxUsage  Int? // ✅ Optional: max times it can be used
+  minAmount Float?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Order {
-  id        String   @id @default(cuid())
-  userId    Int
-  total     Float
-  status    Status   @default(ACTIVE)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id])
+  id              String   @id @default(cuid())
+   orderName       String?  @unique // ✅ Unique order name for easier tracking
+  userId          Int
+  total           Float
+  status          Status   @default(ACTIVE)
+  isPaid          Boolean  @default(false) // ✅ Track payment status
+  couponCode      String? // ✅ Applied coupon (optional)
+  razorpayOrderId String? // ✅ For Razorpay tracking
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id])
 
   payment payment[]
+
+  OrderItem OrderItem[]
 }
 
 model payment {
@@ -155,6 +187,9 @@ model payment {
   orderId   String
   amount    Float
   status    Status   @default(ACTIVE)
+  method    String? // ✅ e.g. "card", "upi", etc.
+  paymentId String? // ✅ Razorpay payment ID
+  currency  String? // ✅ "INR", "USD", etc.
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   order     Order    @relation(fields: [orderId], references: [id])
@@ -166,7 +201,7 @@ model EmailSubscriber {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   verified  Boolean  @default(false)
-  source    String?  // e.g. "popup", "footer", etc.
+  source    String? // e.g. "popup", "footer", etc.
 }
 
 model ContactMessage {
@@ -177,13 +212,6 @@ model ContactMessage {
   message   String
   createdAt DateTime @default(now())
 }
-
-
-// add tag into product 
-
-// image in collection
-// image in category
-
 
 enum Status {
   ACTIVE
@@ -221,7 +249,10 @@ enum ticketCategory {
   OTHER
 }
 
+enum ProductReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
 
 // Setting up the database connection
-
-

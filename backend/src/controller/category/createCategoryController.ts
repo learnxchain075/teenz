@@ -1,32 +1,46 @@
-import { Request, Response, Router } from 'express';
-import { prisma } from '../../db/prisma';
+import { Request, Response, Router } from "express";
+import { prisma } from "../../db/prisma";
+import { uploadFile } from "../../config/upload";
 
 /**
  * Create a new category
  * Expected body: { name, description, imageUrl, status }
  */
+
 export const createCategory = async (req: Request, res: Response): Promise<any> => {
   try {
-    const { name, description, imageUrl, status } = req.body;
+    const { name, description, status  } = req.body;
+    const imageFile = req.file;
+
+    if (!name) {
+      return res.status(400).json({ error: "Category name is required." });
+    }
+    
+    let imageUrl = "";
+    if (imageFile && imageFile.buffer) {
+      const uploadResult = await uploadFile(imageFile.buffer, "category_images", "image");
+      imageUrl = uploadResult.url;
+    }
 
     const category = await prisma.category.create({
       data: {
         name,
         description,
         imageUrl,
-        status
+        status,
       },
       include: {
-        products: true
-      }
+        products: true,
+      },
     });
 
     return res.status(201).json(category);
   } catch (error) {
-    console.error('[createCategory]', error);
-    return res.status(500).json({ error: 'Failed to create category' });
+    console.error("[createCategory]", error);
+    return res.status(500).json({ error: "Failed to create category" });
   }
 };
+
 
 /**
  * Get all categories
@@ -35,14 +49,14 @@ export const getCategories = async (_req: Request, res: Response): Promise<any> 
   try {
     const categories = await prisma.category.findMany({
       include: {
-        products: true
-      }
+        products: true,
+      },
     });
 
     return res.json(categories);
   } catch (error) {
-    console.error('[getCategories]', error);
-    return res.status(500).json({ error: 'Failed to fetch categories' });
+    console.error("[getCategories]", error);
+    return res.status(500).json({ error: "Failed to fetch categories" });
   }
 };
 
@@ -56,18 +70,18 @@ export const getCategoryById = async (req: Request, res: Response): Promise<any>
     const category = await prisma.category.findUnique({
       where: { id },
       include: {
-        products: true
-      }
+        products: true,
+      },
     });
 
     if (!category) {
-      return res.status(404).json({ error: 'Category not found' });
+      return res.status(404).json({ error: "Category not found" });
     }
 
     return res.json(category);
   } catch (error) {
-    console.error('[getCategoryById]', error);
-    return res.status(500).json({ error: 'Failed to fetch category' });
+    console.error("[getCategoryById]", error);
+    return res.status(500).json({ error: "Failed to fetch category" });
   }
 };
 
@@ -85,17 +99,17 @@ export const updateCategory = async (req: Request, res: Response): Promise<any> 
         name,
         description,
         imageUrl,
-        status
+        status,
       },
       include: {
-        products: true
-      }
+        products: true,
+      },
     });
 
     return res.json(updatedCategory);
   } catch (error) {
-    console.error('[updateCategory]', error);
-    return res.status(500).json({ error: 'Failed to update category' });
+    console.error("[updateCategory]", error);
+    return res.status(500).json({ error: "Failed to update category" });
   }
 };
 
@@ -107,12 +121,12 @@ export const deleteCategory = async (req: Request, res: Response): Promise<any> 
     const { id } = req.params;
 
     await prisma.category.delete({
-      where: { id }
+      where: { id },
     });
 
     return res.status(204).send();
   } catch (error) {
-    console.error('[deleteCategory]', error);
-    return res.status(500).json({ error: 'Failed to delete category' });
+    console.error("[deleteCategory]", error);
+    return res.status(500).json({ error: "Failed to delete category" });
   }
 };

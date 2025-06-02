@@ -1,23 +1,38 @@
 import { Request, Response } from 'express';
 import { prisma } from '../../db/prisma';
+import { uploadFile } from '../../config/upload';
 
 /**
  * Create a new product
  * Expected body: { name, price, stock, status, categoryId, images: string[] }
  */
-export const createProduct = async (req: Request, res: Response) => {
-  try {
-    const { name, price, stock, status, categoryId, images } = req.body;
 
+export const createProduct = async (req: Request, res: Response) :Promise<any>  => {
+  try {
+    const { name, price, stock, status, categoryId } = req.body;
+
+    // @ts-ignore - assuming multer has populated req.files
+    const files = req.files as Express.Multer.File[];
+
+    if (!files || files.length === 0) {
+      return res.status(400).json({ error: "No images uploaded" });
+    }
+
+    // Upload all files to Cloudinary
+    const uploadedImages = await Promise.all(
+      files.map(file => uploadFile(file.buffer, "products", "image"))
+    );
+
+    // Create product in Prisma
     const product = await prisma.product.create({
       data: {
         name,
-        price,
-        stock,
+        price: parseFloat(price),
+        stock: parseInt(stock),
         status,
         categoryId,
         images: {
-          create: images?.map((url: string) => ({ url }))
+          create: uploadedImages.map(img => ({ url: img.url }))
         }
       },
       include: {
@@ -33,7 +48,6 @@ export const createProduct = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Failed to create product' });
   }
 };
-
 /**
  * Get all products
  */

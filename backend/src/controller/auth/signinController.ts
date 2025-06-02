@@ -3,21 +3,32 @@ import { prisma } from "../../db/prisma";
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import jwt from 'jsonwebtoken';
+import { uploadFile } from "../../config/upload";
 
 // Signup controller
 export const signupController = async (req: Request, res: Response): Promise<any> => {
   try {
-    const { name, email, password,role } = req.body;
+    const { name, email, password, role } = req.body;
+    const profilePictureFile = req.file;
 
     // Validate input
     if (!email || !password || !name) {
       return res.status(400).json({ error: "Name, email, and password are required." });
     }
 
+    // Upload profile picture if provided
+    let url: string | undefined = undefined;
+    if (profilePictureFile && profilePictureFile.buffer) {
+      const uploadResult = await uploadFile(profilePictureFile.buffer, "profile_pics", "image");
+      url = uploadResult.url;
+    }
+
+
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
       where: { email },
     });
+
 
     if (existingUser) {
       return res.status(409).json({ error: "User already exists." });
@@ -33,6 +44,7 @@ export const signupController = async (req: Request, res: Response): Promise<any
         name,
         email,
         role,
+        profilePicture: url,
         password: hashedPassword,
       },
     });

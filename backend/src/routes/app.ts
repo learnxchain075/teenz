@@ -6,6 +6,10 @@ import categoryRoutes from "./category/categoryRoutes";
 import announcmentRoutes from "./announcment/announcmentRoutes";
 import emailSubscriberRoutes from "./emailSubscriber/emailSubscriberRoutes";
 import contactRoutes from "./contact/contactRoutes";
+import producttagRoutes from "./product/tagRoutes/producttagRoutes";
+import paymentRoutes from "./payment/paymentRoutes";
+import reviewRoutes from "./review/reviewRoutes";
+import orderRoutes from "./order/orderRoutes";
 
 
 // Create a main API router
@@ -21,5 +25,10 @@ apiRouter.use(categoryRoutes);
 apiRouter.use(announcmentRoutes);
 apiRouter.use(emailSubscriberRoutes);
 apiRouter.use(contactRoutes);
+apiRouter.use(producttagRoutes);
+apiRouter.use(reviewRoutes);
+apiRouter.use(paymentRoutes);
+apiRouter.use(orderRoutes);
+
 
 export default apiRouter;

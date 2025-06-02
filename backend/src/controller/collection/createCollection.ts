@@ -1,19 +1,25 @@
-import { Request, Response } from 'express';
-import { prisma } from '../../db/prisma';
+import { Request, Response } from "express";
+import { prisma } from "../../db/prisma";
+import { uploadFile } from "../../config/upload";
 
 // Create a new collection
 export const createCollection = async (req: Request, res: Response): Promise<any> => {
   try {
-    const { name, description, imageUrl, status } = req.body;
-
-    if (!name ) {
-      return res.status(400).json({ error: 'name field is required' });
+    const { name, description, status } = req.body;
+    const imageUrl = req.file;
+    if (!name) {
+      return res.status(400).json({ error: "name field is required" });
+    }
+    let url: string | undefined = undefined;
+    if (imageUrl && imageUrl.buffer) {
+      const uploadResult = await uploadFile(imageUrl.buffer, "collection_images", "image");
+      url = uploadResult.url;
     }
     const collection = await prisma.collection.create({
       data: {
         name,
         description,
-        imageUrl,
+        imageUrl: url ?? "",
         status,
       },
     });
@@ -21,12 +27,12 @@ export const createCollection = async (req: Request, res: Response): Promise<any
   } catch (error) {
     if (error instanceof Error) {
       if (error instanceof Error) {
-        res.status(500).json({ error: (error instanceof Error ? error.message : 'An unknown error occurred') });
+        res.status(500).json({ error: error instanceof Error ? error.message : "An unknown error occurred" });
       } else {
-        res.status(500).json({ error: 'An unknown error occurred' });
+        res.status(500).json({ error: "An unknown error occurred" });
       }
     } else {
-      res.status(500).json({ error: 'An unknown error occurred' });
+      res.status(500).json({ error: "An unknown error occurred" });
     }
   }
 };
@@ -37,23 +43,23 @@ export const getCollections = async (req: Request, res: Response) => {
     const collections = await prisma.collection.findMany();
     res.status(200).json(collections);
   } catch (error) {
-    res.status(500).json({ error: error instanceof Error ? error.message : 'An unknown error occurred' });
+    res.status(500).json({ error: error instanceof Error ? error.message : "An unknown error occurred" });
   }
 };
 
 // Get a collection by ID
-export const getCollectionById = async (req: Request, res: Response):Promise<any> => {
+export const getCollectionById = async (req: Request, res: Response): Promise<any> => {
   try {
     const { id } = req.params;
     const collection = await prisma.collection.findUnique({
       where: { id },
     });
     if (!collection) {
-      return res.status(404).json({ message: 'Collection not found' });
+      return res.status(404).json({ message: "Collection not found" });
     }
     res.status(200).json(collection);
   } catch (error) {
-    res.status(500).json({ error: error instanceof Error ? error.message : 'An unknown error occurred' });
+    res.status(500).json({ error: error instanceof Error ? error.message : "An unknown error occurred" });
   }
 };
 
@@ -73,7 +79,7 @@ export const updateCollection = async (req: Request, res: Response) => {
     });
     res.status(200).json(collection);
   } catch (error) {
-    res.status(500).json({ error: error instanceof Error ? error.message : 'An unknown error occurred' });
+    res.status(500).json({ error: error instanceof Error ? error.message : "An unknown error occurred" });
   }
 };
 
@@ -84,8 +90,8 @@ export const deleteCollection = async (req: Request, res: Response) => {
     await prisma.collection.delete({
       where: { id },
     });
-    res.status(200).json({ message: 'Collection deleted successfully' });
+    res.status(200).json({ message: "Collection deleted successfully" });
   } catch (error) {
-    res.status(500).json({ error: error instanceof Error ? error.message : 'An unknown error occurred' });
+    res.status(500).json({ error: error instanceof Error ? error.message : "An unknown error occurred" });
   }
 };
