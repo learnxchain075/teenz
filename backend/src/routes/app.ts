@@ -10,6 +10,7 @@ import producttagRoutes from "./product/tagRoutes/producttagRoutes";
 import paymentRoutes from "./payment/paymentRoutes";
 import reviewRoutes from "./review/reviewRoutes";
 import orderRoutes from "./order/orderRoutes";
+import dashboardStatsRoutes from "./dashboard/dashboardStatsRoutes";
 
 
 // Create a main API router
@@ -29,6 +30,7 @@ apiRouter.use(producttagRoutes);
 apiRouter.use(reviewRoutes);
 apiRouter.use(paymentRoutes);
 apiRouter.use(orderRoutes);
+apiRouter.use(dashboardStatsRoutes);
 
 
 export default apiRouter;
