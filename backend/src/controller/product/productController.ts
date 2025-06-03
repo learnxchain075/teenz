@@ -9,6 +9,7 @@ import { uploadFile } from '../../config/upload';
 
 export const createProduct = async (req: Request, res: Response) :Promise<any>  => {
   try {
+   
     const { name, price, stock, status, categoryId } = req.body;
 
     // @ts-ignore - assuming multer has populated req.files

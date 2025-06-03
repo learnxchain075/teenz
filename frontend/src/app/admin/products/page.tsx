@@ -8,22 +8,63 @@ import AdminTable from '@/components/admin/Table';
 import Image from 'next/image';
 import axios from 'axios';
 import Modal from '@/components/ui/Modal';
+import toast, { Toaster } from 'react-hot-toast';
+
+interface Tag {
+  id: string;
+  name: string;
+  products?: any[];
+}
+
+interface TagResponse {
+  tags: Tag[];
+}
+
+interface ProductTag {
+  id: string;
+  name: string;
+}
+
+interface UploadResponse {
+  url: string;
+  message?: string;
+}
+
+// Add ProductStatus enum to match Prisma schema
+enum ProductStatus {
+  IN_STOCK = 'IN_STOCK',
+  LOW_STOCK = 'LOW_STOCK',
+  OUT_OF_STOCK = 'OUT_OF_STOCK'
+}
+
+interface ProductInput {
+  name: string;
+  price: number;
+  stock: number;
+  status: ProductStatus;
+  categoryId: string;
+  images: any[];
+  tags: any[];
+}
 
 const ProductsPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [tagInput, setTagInput] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [newProduct, setNewProduct] = useState({
+  const [newProduct, setNewProduct] = useState<ProductInput>({
     name: '',
     price: 0,
     stock: 0,
-    status: 'In Stock',
+    status: ProductStatus.IN_STOCK,
     categoryId: '',
-    images: []
+    images: [],
+    tags: []
   });
   const [editingProduct, setEditingProduct] = useState(null);
   const [productToDelete, setProductToDelete] = useState(null);
@@ -36,33 +77,52 @@ const ProductsPage = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [productsResponse, categoriesResponse] = await Promise.all([
-          axios.get('http://localhost:5000/api/v1/products', {
-            params: { include: 'images,category,collections' }
-          }),
-          axios.get('http://localhost:5000/api/v1/categories')
-        ]);
-        setProducts(productsResponse.data as any[]);
-        setCategories(categoriesResponse.data as any[]);
+        setError(null);
+
+        // Fetch products
+        let productsData;
+        try {
+          const productsResponse = await axios.get('http://localhost:5000/api/v1/products', {
+            params: { include: 'images,category,collections,tags' }
+          });
+          productsData = productsResponse.data;
+        } catch (error: any) {
+          console.error('Error fetching products:', error);
+          throw new Error(`Failed to fetch products: ${error.response?.data?.error || error.message}`);
+        }
+
+        // Fetch categories
+        let categoriesData;
+        try {
+          const categoriesResponse = await axios.get('http://localhost:5000/api/v1/categories');
+          categoriesData = categoriesResponse.data;
+        } catch (error: any) {
+          console.error('Error fetching categories:', error);
+          throw new Error(`Failed to fetch categories: ${error.response?.data?.error || error.message}`);
+        }
+
+        // Fetch tags
+        let tagsData;
+        try {
+          const tagsResponse = await axios.get<TagResponse>('http://localhost:5000/api/v1/product-tag');
+          tagsData = tagsResponse.data.tags;
+        } catch (error: any) {
+          console.error('Error fetching tags:', error);
+          throw new Error(`Failed to fetch tags: ${error.response?.data?.error || error.message}`);
+        }
+
+        setProducts(productsData || []);
+        setCategories(categoriesData || []);
+        setTags(tagsData || []);
         setLoading(false);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        setError('Failed to load products and categories');
+      } catch (error: any) {
+        console.error('Error in fetchData:', error);
+        setError(error.message || 'Failed to load data');
         setLoading(false);
       }
     };
     fetchData();
   }, []);
-
-  type ProductInput = {
-    name: string;
-    price: number;
-    stock: number;
-    status: string;
-    categoryId: string;
-    images: any[];
-    [key: string]: any;
-  };
 
   type ProductErrors = {
     name?: string;
@@ -70,6 +130,7 @@ const ProductsPage = () => {
     stock?: string;
     categoryId?: string;
     general?: string;
+    images?: string;
     [key: string]: string | undefined;
   };
 
@@ -79,32 +140,153 @@ const ProductsPage = () => {
     if (isNaN(product.price) || product.price <= 0) errors.price = 'Price must be a positive number';
     if (isNaN(product.stock) || product.stock < 0) errors.stock = 'Stock must be a non-negative integer';
     if (!product.categoryId) errors.categoryId = 'Category is required';
+    if (!product.images || product.images.length === 0) errors.images = 'At least one image is required';
     return errors;
+  };
+
+  // Create a new tag
+  const createTag = async (tagName: string): Promise<Tag | null> => {
+    try {
+      const response = await axios.post<{ message: string; tag: Tag }>('http://localhost:5000/api/v1/product-tag', {
+        name: tagName
+      });
+      setTags([...tags, response.data.tag]);
+      return response.data.tag;
+    } catch (error) {
+      console.error('Error creating tag:', error);
+      return null;
+    }
+  };
+
+  // Handle tag input
+  const handleTagInput = async (input: string) => {
+    const tagName = input.trim();
+    if (!tagName) return;
+
+    // Check if tag already exists
+    let tag = tags.find(t => t.name.toLowerCase() === tagName.toLowerCase());
+    
+    // If tag doesn't exist, create it
+    if (!tag) {
+      tag = await createTag(tagName);
+      if (!tag) return; // Failed to create tag
+    }
+
+    // Add tag to product if not already added
+    if (!newProduct.tags.some(t => t.id === tag.id)) {
+      setNewProduct(prev => ({
+        ...prev,
+        tags: [...prev.tags, tag]
+      }));
+    }
   };
 
   const handleCreateProduct = async () => {
     const errors = validateProduct(newProduct);
-    if (Object.keys(errors).length > 0) {
-      setCreateErrors(errors);
+    
+    // Validate images
+    if (!newProduct.images || newProduct.images.length === 0) {
+      setCreateErrors({ ...errors, images: 'At least one image is required' });
+      toast.error('Please add at least one image');
       return;
     }
+
+    if (Object.keys(errors).length > 0) {
+      setCreateErrors(errors);
+      // Show validation errors in toast
+      Object.values(errors).forEach(error => {
+        toast.error(error);
+      });
+      return;
+    }
+
+    // Show loading toast
+    const loadingToast = toast.loading('Creating product...');
+
     try {
-      const productData = {
-        name: newProduct.name,
-        price: newProduct.price,
-        stock: newProduct.stock,
-        status: newProduct.status,
-        categoryId: newProduct.categoryId,
-        images: newProduct.images,
-      };
-      const response = await axios.post('http://localhost:5000/api/v1/products', productData);
+      const formData = new FormData();
+      
+      // Add each field individually to match backend's req.body expectation
+      formData.append('name', newProduct.name.trim());
+      formData.append('price', newProduct.price.toString());
+      formData.append('stock', newProduct.stock.toString());
+      formData.append('status', newProduct.status);
+      formData.append('categoryId', newProduct.categoryId);
+
+      // Add tags
+      if (newProduct.tags && newProduct.tags.length > 0) {
+        formData.append('tags', JSON.stringify(newProduct.tags.map(tag => tag.id)));
+      }
+
+      // Add files to match backend's req.files expectation
+      if (newProduct.images && newProduct.images.length > 0) {
+        newProduct.images.forEach((file: File) => {
+          formData.append('images', file);
+        });
+      }
+
+      const response = await axios.post('http://localhost:5000/api/v1/products', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      // Dismiss loading toast and show success
+      toast.dismiss(loadingToast);
+      toast.success('Product created successfully!');
+
       setProducts([...products, response.data]);
       setShowCreateModal(false);
-      setNewProduct({ name: '', price: 0, stock: 0, status: 'In Stock', categoryId: '', images: [] });
+      setNewProduct({
+        name: '',
+        price: 0,
+        stock: 0,
+        status: ProductStatus.IN_STOCK,
+        categoryId: '',
+        images: [],
+        tags: []
+      });
       setCreateErrors({});
-    } catch (error) {
+    } catch (error: any) {
+      // Dismiss loading toast
+      toast.dismiss(loadingToast);
+
       console.error('Error creating product:', error);
-      setCreateErrors({ general: 'Failed to create product' });
+      if (error.response) {
+        // Server responded with error
+        console.error('Server error details:', {
+          status: error.response.status,
+          data: error.response.data,
+          headers: error.response.headers
+        });
+        // Show error message from server
+        toast.error(error.response.data.error || 'Failed to create product');
+      } else if (error.request) {
+        // Network error
+        console.error('Network error - no response received');
+        toast.error('Network error. Please check your connection.');
+      } else {
+        // Other errors
+        console.error('Request setup error:', error.message);
+        toast.error('An unexpected error occurred');
+      }
+      
+      let errorMessage = 'Failed to create product';
+      let fieldErrors = {};
+      
+      if (error.response?.data) {
+        errorMessage = error.response.data.error || error.response.data.message || errorMessage;
+        fieldErrors = error.response.data.errors || {};
+      } else if (error.request) {
+        errorMessage = 'Network error. Please check your connection and try again.';
+      } else {
+        errorMessage = error.message || errorMessage;
+      }
+
+      setCreateErrors({ 
+        general: errorMessage,
+        ...fieldErrors
+      });
     }
   };
 
@@ -147,8 +329,29 @@ const ProductsPage = () => {
     }
   };
 
-  if (loading) return <div className="text-center py-8">Loading products...</div>;
-  if (error) return <div className="text-red-600 text-center py-8">{error}</div>;
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
+        <p className="text-gray-600">Loading products...</p>
+      </div>
+    </div>
+  );
+
+  if (error) return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="text-center p-6 max-w-lg mx-auto">
+        <div className="text-red-600 text-xl mb-4">⚠️ Error</div>
+        <p className="text-gray-800 mb-4">{error}</p>
+        <Button 
+          onClick={() => window.location.reload()}
+          className="bg-blue-500 hover:bg-blue-600 text-white"
+        >
+          Try Again
+        </Button>
+      </div>
+    </div>
+  );
 
   const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
@@ -157,13 +360,34 @@ const ProductsPage = () => {
 
   return (
     <div className="space-y-6">
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: '#333',
+            color: '#fff',
+          },
+          success: {
+            style: {
+              background: '#22c55e',
+            },
+          },
+          error: {
+            style: {
+              background: '#ef4444',
+            },
+            duration: 5000,
+          },
+        }}
+      />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Products</h1>
           <p className="text-gray-600 dark:text-gray-400">Manage your product inventory</p>
         </div>
         <Button onClick={() => {
-          setNewProduct({ name: '', price: 0, stock: 0, status: 'In Stock', categoryId: '', images: [] });
+          setNewProduct({ name: '', price: 0, stock: 0, status: ProductStatus.IN_STOCK, categoryId: '', images: [], tags: [] });
           setCreateErrors({});
           setShowCreateModal(true);
         }}>
@@ -178,7 +402,7 @@ const ProductsPage = () => {
           isOpen={showCreateModal}
           title={"Create New Product"}
         >
-          <div className="p-4 sm:p-6 md:p-8 max-w-2xl mx-auto">
+          <div className="p-6">
             <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Create New Product</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               {/* Product Name */}
@@ -221,20 +445,6 @@ const ProductsPage = () => {
                 {createErrors.stock && <p className="text-red-600 text-sm mt-1">{createErrors.stock}</p>}
               </div>
 
-              {/* Status */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                <select
-                  value={newProduct.status}
-                  onChange={e => setNewProduct({ ...newProduct, status: e.target.value })}
-                  className="w-full p-3 border border-gray-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition"
-                >
-                  <option value="In Stock">In Stock</option>
-                  <option value="LOW_STOCK">LOW_STOCK</option>
-                  <option value="Out of Stock">Out of Stock</option>
-                </select>
-              </div>
-
               {/* Category */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
@@ -251,16 +461,116 @@ const ProductsPage = () => {
                 {createErrors.categoryId && <p className="text-red-600 text-sm mt-1">{createErrors.categoryId}</p>}
               </div>
 
-              {/* Image URL */}
+              {/* Images */}
               <div className="col-span-1 sm:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Product Images</label>
+                <div className="space-y-4">
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={e => {
+                      const files = Array.from(e.target.files || []);
+                      setNewProduct({ ...newProduct, images: [...newProduct.images, ...files] });
+                      // Clear any existing image error when files are added
+                      if (files.length > 0 && createErrors.images) {
+                        setCreateErrors(prev => {
+                          const { images, ...rest } = prev;
+                          return rest;
+                        });
+                      }
+                    }}
+                    className={`w-full p-3 border ${createErrors.images ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition`}
+                  />
+                  {createErrors.images && (
+                    <p className="text-red-600 text-sm mt-1">{createErrors.images}</p>
+                  )}
+                  {newProduct.images.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {newProduct.images.map((file: File, index) => (
+                        <div 
+                          key={index}
+                          className="flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-lg"
+                        >
+                          <span className="text-sm text-gray-700">{file.name}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newImages = [...newProduct.images];
+                              newImages.splice(index, 1);
+                              setNewProduct({ ...newProduct, images: newImages });
+                            }}
+                            className="text-gray-500 hover:text-red-500"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <p className="text-sm text-gray-500">You can select multiple images</p>
+                </div>
+              </div>
+
+              {/* Status */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select
+                  value={newProduct.status}
+                  onChange={e => setNewProduct({ ...newProduct, status: e.target.value as ProductStatus })}
+                  className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition"
+                >
+                  <option value={ProductStatus.IN_STOCK}>In Stock</option>
+                  <option value={ProductStatus.LOW_STOCK}>Low Stock</option>
+                  <option value={ProductStatus.OUT_OF_STOCK}>Out of Stock</option>
+                </select>
+              </div>
+
+              {/* Tags */}
+              <div className="col-span-1 sm:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Tags</label>
                 <input
                   type="text"
-                  placeholder="Enter image URL"
-                  value={newProduct.images[0] || ''}
-                  onChange={e => setNewProduct({ ...newProduct, images: [e.target.value] })}
+                  placeholder="Enter tags (press Enter to add)"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={async (e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      const input = tagInput.trim();
+                      if (input) {
+                        await handleTagInput(input);
+                        setTagInput('');
+                      }
+                    }
+                  }}
                   className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition"
                 />
+                <p className="text-sm text-gray-500 mt-1">Press Enter to add a tag</p>
+                {newProduct.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {newProduct.tags.map((tag) => (
+                      <div 
+                        key={tag.id}
+                        className="flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-lg"
+                      >
+                        <span className="text-sm text-gray-700">{tag.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setNewProduct(prev => ({
+                              ...prev,
+                              tags: prev.tags.filter(t => t.id !== tag.id)
+                            }));
+                          }}
+                          className="text-gray-500 hover:text-red-500"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -268,7 +578,7 @@ const ProductsPage = () => {
             {createErrors.general && <p className="text-red-600 text-sm mt-4 text-center">{createErrors.general}</p>}
 
             {/* Submit Button */}
-            <div className="mt-6 text-center">
+            <div className="mt-6 flex justify-end">
               <Button
                 onClick={handleCreateProduct}
                 className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl shadow-md transition duration-300 w-full sm:w-auto"
@@ -318,12 +628,12 @@ const ProductsPage = () => {
             <div>
               <select
                 value={editingProduct.status}
-                onChange={e => setEditingProduct({ ...editingProduct, status: e.target.value })}
+                onChange={e => setEditingProduct({ ...editingProduct, status: e.target.value as ProductStatus })}
                 className="w-full p-2 border rounded-lg"
               >
-                <option value="In Stock">In Stock</option>
-                <option value="LOW_STOCK">LOW_STOCK</option>
-                <option value="Out of Stock">Out of Stock</option>
+                <option value={ProductStatus.IN_STOCK}>In Stock</option>
+                <option value={ProductStatus.LOW_STOCK}>Low Stock</option>
+                <option value={ProductStatus.OUT_OF_STOCK}>Out of Stock</option>
               </select>
             </div>
             <div>
@@ -442,9 +752,9 @@ const ProductsPage = () => {
                   accessor: 'status',
                   cell: value => (
                     <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${value === 'In Stock'
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${value === ProductStatus.IN_STOCK
                           ? 'bg-green-100 text-green-800'
-                          : value === 'LOW_STOCK'
+                          : value === ProductStatus.LOW_STOCK
                             ? 'bg-yellow-100 text-yellow-800'
                             : 'bg-red-100 text-red-800'
                         }`}

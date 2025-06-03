@@ -72,7 +72,9 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                           <p className="text-lg text-gray-500 dark:text-gray-400 mb-4">
                             Your cart is empty
                           </p>
-                          <Button onClick={onClose}>Continue Shopping</Button>
+                          <Link href="/categories" className="inline-block">
+                            <Button>Continue Shopping</Button>
+                          </Link>
                         </div>
                       </div>
                     ) : (

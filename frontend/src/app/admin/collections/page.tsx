@@ -1,196 +1,237 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { useState, FormEvent, ChangeEvent, useEffect, useRef } from 'react';
 import { Plus, Search, Filter, Edit, Trash2, Image as ImageIcon } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import AdminTable from '@/components/admin/Table';
 import Image from 'next/image';
 import Modal from '@/components/ui/Modal';
-import PropTypes from 'prop-types';
+import { toast } from 'react-hot-toast';
+
+// Define Collection interface for type safety
+interface Collection {
+  id: string;
+  name: string;
+  description?: string;
+  imageUrl?: string;
+  status?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+interface CollectionData {
+  name: string;
+  description: string;
+  image: File | null;
+  status: 'ACTIVE' | 'INACTIVE';
+}
+
+interface FormErrors {
+  name?: string;
+  description?: string;
+}
 
 export default function CollectionsPage() {
-  const [collections, setCollections] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [currentCollection, setCurrentCollection] = useState(null);
-  const [formData, setFormData] = useState({
+  const [collections, setCollections] = useState<Collection[]>([]);
+  const [collectionData, setCollectionData] = useState<CollectionData>({
     name: '',
     description: '',
-    imageUrl: '',
-    status: 'ACTIVE',
+    image: null,
+    status: 'ACTIVE'
   });
+  const [formErrors, setFormErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [formErrors, setFormErrors] = useState<{ name?: string; description?: string; imageUrl?: string }>({});
+  const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Validate form inputs
-  const validateForm = useCallback(() => {
-    const errors: { name?: string; description?: string; image?: string } = {};
-    if (!formData.name.trim()) errors.name = 'Name is required';
-    if (!formData.description.trim()) errors.description = 'Description is required';
-    if (formData.imageUrl && !/^https?:\/\/[^\s$.?#].[^\s]*$/.test(formData.imageUrl)) {
-      errors.image = 'Invalid URL format';
-    }
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  }, [formData]);
-
-  // Fetch collections with cleanup
+  // Fetch collections from API
   useEffect(() => {
-    let mounted = true;
+    fetchCollections();
+  }, []);
 
     const fetchCollections = async () => {
-      setIsLoading(true);
-      setError(null);
       try {
         const response = await fetch('http://localhost:5000/api/v1/collections');
         if (!response.ok) throw new Error('Failed to fetch collections');
         const data = await response.json();
-        if (mounted) {
           setCollections(Array.isArray(data) ? data : []);
-        }
       } catch (error) {
-        if (mounted) {
-          setError(error.message);
           console.error('Error fetching collections:', error);
-        }
-      } finally {
-        if (mounted) setIsLoading(false);
-      }
-    };
+      toast.error('Failed to fetch collections');
+    }
+  };
 
-    fetchCollections();
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  // Handle form input changes with sanitization
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: name === 'image' ? value.trim() : value,
-    }));
-    // Clear error for this field when user starts typing
-    setFormErrors((prev) => ({ ...prev, [name]: '' }));
+  const validateForm = (): boolean => {
+    const errors: FormErrors = {};
+    if (!collectionData.name.trim()) {
+      errors.name = 'Collection name is required';
+    }
+    if (!collectionData.description.trim()) {
+      errors.description = 'Description is required';
+    }
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   // Create a new collection
-  const handleCreateCollection = async () => {
-    if (!validateForm()) return;
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!validateForm()) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
 
     setIsLoading(true);
-    setError(null);
     try {
+      const formData = new FormData();
+      formData.append('name', collectionData.name.trim());
+      formData.append('description', collectionData.description.trim());
+      formData.append('status', collectionData.status || 'ACTIVE');
+      if (collectionData.image) {
+        formData.append('imageUrl', collectionData.image);
+      }
+
       const response = await fetch('http://localhost:5000/api/v1/collections', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: formData
       });
-      if (!response.ok) throw new Error('Failed to create collection');
-      setIsAddModalOpen(false);
-      setFormData({ name: '', description: '', imageUrl: '', status: 'ACTIVE' });
-      // Refetch collections after creation
-      const refreshed = await fetch('http://localhost:5000/api/v1/collections');
-      if (refreshed.ok) {
-        const data = await refreshed.json();
-        setCollections(Array.isArray(data) ? data : []);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create collection');
       }
+
+      const data = await response.json();
+      setCollections((prev) => [...prev, data]);
+      setCollectionData({ name: '', description: '', image: null, status: 'ACTIVE' });
+      setIsAddModalOpen(false);
+      toast.success('Collection created successfully');
     } catch (error) {
-      setError(error.message);
       console.error('Error creating collection:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to create collection');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Update a collection
-  const handleUpdateCollection = async () => {
-    if (!validateForm() || !currentCollection) return;
+  // Edit a collection
+  const handleEdit = (collectionToEdit: Collection) => {
+    setSelectedCollection(collectionToEdit);
+    setCollectionData({
+      name: collectionToEdit.name || '',
+      description: collectionToEdit.description || '',
+      image: null,
+      status: (collectionToEdit.status as 'ACTIVE' | 'INACTIVE') || 'ACTIVE'
+    });
+    setIsAddModalOpen(true);
+  };
+
+  // Update the collection
+  const handleUpdate = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!selectedCollection || !validateForm()) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
 
     setIsLoading(true);
-    setError(null);
     try {
-      const response = await fetch(`http://localhost:5000/api/v1/collections/${currentCollection._id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-      if (!response.ok) throw new Error('Failed to update collection');
-      setIsEditModalOpen(false);
-      setFormData({ name: '', description: '', imageUrl: '', status: 'ACTIVE' });
-      setCurrentCollection(null);
-      // Refetch collections after update
-      const refreshed = await fetch('/api/collections');
-      if (refreshed.ok) {
-        const data = await refreshed.json();
-        setCollections(Array.isArray(data) ? data : []);
+      const formData = new FormData();
+      formData.append('name', collectionData.name.trim());
+      formData.append('description', collectionData.description.trim());
+      formData.append('status', collectionData.status || 'ACTIVE');
+      if (collectionData.image) {
+        formData.append('imageUrl', collectionData.image);
       }
+
+      const response = await fetch(
+        `http://localhost:5000/api/v1/collections/${selectedCollection.id}`,
+        {
+        method: 'PUT',
+          body: formData
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update collection');
+      }
+
+      const updatedCollection = await response.json();
+      setCollections((prev) =>
+        prev.map((col) =>
+          col.id === selectedCollection.id ? updatedCollection : col
+        )
+      );
+      setCollectionData({ name: '', description: '', image: null, status: 'ACTIVE' });
+      setSelectedCollection(null);
+      setIsAddModalOpen(false);
+      toast.success('Collection updated successfully');
     } catch (error) {
-      setError(error.message);
       console.error('Error updating collection:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to update collection');
     } finally {
       setIsLoading(false);
     }
   };
 
   // Delete a collection
-  const handleDeleteCollection = async (id) => {
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this collection?')) {
+      return;
+    }
+
     setIsLoading(true);
-    setError(null);
     try {
       const response = await fetch(`http://localhost:5000/api/v1/collections/${id}`, {
         method: 'DELETE',
       });
-      if (!response.ok) throw new Error('Failed to delete collection');
-      // Refetch collections after deletion
-      const refreshed = await fetch('http://localhost:5000/api/v1/collections');
-      if (refreshed.ok) {
-        const data = await refreshed.json();
-        setCollections(Array.isArray(data) ? data : []);
+
+      if (!response.ok) {
+        throw new Error('Failed to delete collection');
       }
+
+      setCollections((prev) => prev.filter((col) => col.id !== id));
+      toast.success('Collection deleted successfully');
     } catch (error) {
-      setError(error.message);
       console.error('Error deleting collection:', error);
+      toast.error('Failed to delete collection');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Open edit modal with collection data
-  const openEditModal = useCallback((collection) => {
-    setCurrentCollection(collection);
-    setFormData({
-      name: collection.name || '',
-      description: collection.description || '',
-      imageUrl: collection.image || '',
-      status: collection.status || 'ACTIVE',
-    });
-    setFormErrors({});
-    setIsEditModalOpen(true);
-  }, []);
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setCollectionData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+    // Clear error when user starts typing
+    if (formErrors[name as keyof FormErrors]) {
+      setFormErrors((prev) => ({
+        ...prev,
+        [name]: undefined,
+      }));
+    }
+  };
 
-  // Filter collections based on search and status
-  const filteredCollections = collections.filter((collection) => {
-    const matchesSearch = collection.name
-      ?.toLowerCase()
-      .includes(searchQuery.toLowerCase());
-    const matchesStatus =
-      selectedStatus === 'all' || collection.status === selectedStatus;
-    return matchesSearch && matchesStatus;
-  });
+  const handleImageClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setCollectionData(prev => ({ ...prev, image: file }));
+    }
+  };
 
   return (
-    <div className="space-y-6 p-6">
-      {error && (
-        <div className="bg-red-100 text-red-800 p-4 rounded-lg">
-          {error}
-        </div>
-      )}
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Collections</h1>
@@ -198,18 +239,144 @@ export default function CollectionsPage() {
             Manage your product collections
           </p>
         </div>
-        <Button onClick={() => setIsAddModalOpen(true)} disabled={isLoading}>
+        <Button onClick={() => setIsAddModalOpen(true)}>
           <Plus className="w-5 h-5 mr-2" />
           Add Collection
         </Button>
       </div>
 
-      <motion.div
-        className="bg-white dark:bg-gray-800 rounded-xl shadow-sm"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.3 }}
-      >
+      {/* Modal */}
+      {isAddModalOpen && (
+        <Modal
+          onClose={() => {
+            setIsAddModalOpen(false);
+            setCollectionData({ name: '', description: '', image: null, status: 'ACTIVE' });
+            setSelectedCollection(null);
+            setFormErrors({});
+          }}
+          isOpen={isAddModalOpen}
+          title={selectedCollection ? 'Edit Collection' : 'Add New Collection'}
+        >
+          <form
+            onSubmit={(event: FormEvent<HTMLFormElement>) => {
+              event.preventDefault();
+              if (selectedCollection) {
+                handleUpdate(event);
+              } else {
+                handleSubmit(event);
+              }
+            }}
+          >
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Collection Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={collectionData.name}
+                  onChange={handleInputChange}
+                  className={`w-full p-3 border ${
+                    formErrors.name ? 'border-red-500' : 'border-gray-300'
+                  } rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-300`}
+                  placeholder="Enter collection name"
+                  disabled={isLoading}
+                />
+                {formErrors.name && (
+                  <p className="mt-1 text-sm text-red-500">{formErrors.name}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Description <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  name="description"
+                  value={collectionData.description}
+                  onChange={handleInputChange}
+                  className={`w-full p-3 border ${
+                    formErrors.description ? 'border-red-500' : 'border-gray-300'
+                  } rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-300`}
+                  placeholder="Enter collection description"
+                  rows={4}
+                  disabled={isLoading}
+                />
+                {formErrors.description && (
+                  <p className="mt-1 text-sm text-red-500">{formErrors.description}</p>
+                )}
+              </div>
+
+              <div className="mb-6">
+                <label htmlFor="image" className="block text-sm font-medium text-gray-700 mb-2">
+                  Collection Image
+                </label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="hidden"
+                />
+                <div 
+                  onClick={handleImageClick}
+                  className="cursor-pointer"
+                >
+                  {collectionData.image ? (
+                    <div className="flex items-center gap-2 p-3 border border-gray-300 rounded-lg bg-white hover:bg-gray-50">
+                      <div className="flex-1 truncate text-gray-600">
+                        {collectionData.image.name}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCollectionData(prev => ({ ...prev, image: null }));
+                        }}
+                        className="text-gray-400 hover:text-red-500"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center p-3 border border-dashed border-gray-300 rounded-lg hover:border-gray-400">
+                      <span className="text-gray-600">Click to choose an image</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-4 mt-6">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsAddModalOpen(false);
+                  setCollectionData({ name: '', description: '', image: null, status: 'ACTIVE' });
+                  setSelectedCollection(null);
+                  setFormErrors({});
+                }}
+                disabled={isLoading}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading
+                  ? selectedCollection
+                    ? 'Updating...'
+                    : 'Creating...'
+                  : selectedCollection
+                  ? 'Update Collection'
+                  : 'Create Collection'}
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      <div className="bg-white dark:bg-card rounded-xl shadow-sm">
         <div className="p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <div className="relative flex-1">
@@ -218,49 +385,46 @@ export default function CollectionsPage() {
                 type="text"
                 placeholder="Search collections..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value.trim())}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={isLoading}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
             <div className="flex items-center gap-4">
               <select
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={isLoading}
+                className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="all">All Status</option>
                 <option value="ACTIVE">Active</option>
                 <option value="INACTIVE">Inactive</option>
               </select>
-              <Button variant="outline" disabled={isLoading}>
+              <Button variant="outline">
                 <Filter className="w-5 h-5 mr-2" />
                 Filters
               </Button>
             </div>
           </div>
 
-          {isLoading ? (
-            <div className="text-center py-8">Loading...</div>
-          ) : (
             <AdminTable
-              data={filteredCollections}
+            data={collections}
               columns={[
                 {
                   header: 'Collection',
                   accessor: 'name',
                   cell: (value, row) => (
                     <div className="flex items-center">
-                      {row?.image ? (
+                    {row?.imageUrl ? (
                         <div className="relative w-12 h-12 rounded-lg overflow-hidden mr-3">
                           <Image
-                            src={row.image}
+                          src={row.imageUrl}
                             alt={row.name || 'Collection image'}
-                            fill
+                          width={48}
+                          height={48}
                             className="object-cover"
                             onError={(e) => {
-                              (e.target as HTMLImageElement).src = '/placeholder-image.jpg';
+                            const target = e.target as HTMLImageElement;
+                            target.src = '/placeholder-image.jpg';
                             }}
                           />
                         </div>
@@ -270,51 +434,50 @@ export default function CollectionsPage() {
                         </div>
                       )}
                       <div>
-                        <div className="font-medium">{row?.name || 'Unnamed'}</div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                          {row?.description || 'No description'}
-                        </div>
+                      <div className="font-medium text-gray-900">{row?.name || 'Unnamed Collection'}</div>
+                      <div className="text-sm text-gray-500">
+                        {row?.description || 'No description available'}
+                      </div>
                       </div>
                     </div>
                   ),
-                },
-                {
-                  header: 'Products',
-                  accessor: 'products',
-                  cell: (value) => value || 0,
                 },
                 {
                   header: 'Status',
                   accessor: 'status',
                   cell: (value) => (
                     <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${value === 'Active'
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      value === 'ACTIVE'
                           ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
+                        : 'bg-gray-100 text-gray-800'
                         }`}
                     >
-                      {value || 'Unknown'}
+                    {value || 'INACTIVE'}
                     </span>
                   ),
                 },
                 {
                   header: 'Actions',
-                  accessor: '_id',
-                  cell: (value) => (
+                accessor: 'id',
+                cell: (id) => (
                     <div className="flex items-center gap-2">
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => openEditModal(collections.find((c) => c._id === value))}
-                        disabled={isLoading}
+                      onClick={() => {
+                        const collection = collections.find(c => c.id === id);
+                        if (collection) {
+                          handleEdit(collection);
+                        }
+                      }}
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDeleteCollection(value)}
-                        disabled={isLoading}
+                      onClick={() => handleDelete(id)}
                       >
                         <Trash2 className="w-4 h-4 text-red-600" />
                       </Button>
@@ -323,185 +486,8 @@ export default function CollectionsPage() {
                 },
               ]}
             />
-          )}
-        </div>
-      </motion.div>
-
-      {/* Add Collection Modal */}
-      <Modal
-        isOpen={isAddModalOpen}
-        onClose={() => {
-          setIsAddModalOpen(false);
-          setFormErrors({});
-        }}
-        title="Add New Collection"
-      >
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium">Name</label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleInputChange}
-              className={`w-full px-3 py-2 border rounded-lg ${formErrors.name ? 'border-red-500' : ''
-                }`}
-              placeholder="Collection name"
-              disabled={isLoading}
-            />
-            {formErrors.name && (
-              <p className="text-red-500 text-xs mt-1">{formErrors.name}</p>
-            )}
-          </div>
-          <div>
-            <label className="block text-sm font-medium">Description</label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleInputChange}
-              className={`w-full px-3 py-2 border rounded-lg ${formErrors.description ? 'border-red-500' : ''
-                }`}
-              placeholder="Collection description"
-              disabled={isLoading}
-            />
-            {formErrors.description && (
-              <p className="text-red-500 text-xs mt-1">{formErrors.description}</p>
-            )}
-          </div>
-          <div>
-            <label className="block text-sm font-medium">Image URL</label>
-            <input
-              type="url"
-              name="imageUrl"
-              value={formData.imageUrl}
-              onChange={handleInputChange}
-              className={`w-full px-3 py-2 border rounded-lg ${formErrors.imageUrl ? 'border-red-500' : ''
-                }`}
-              placeholder="https://example.com/image.jpg"
-              disabled={isLoading}
-            />
-            {formErrors.imageUrl && (
-              <p className="text-red-500 text-xs mt-1">{formErrors.imageUrl}</p>
-            )}
-          </div>
-          <div>
-            <label className="block text-sm font-medium">Status</label>
-            <select
-              name="status"
-              value={formData.status}
-              onChange={handleInputChange}
-              className="w-full px-3 py-2 border rounded-lg"
-              disabled={isLoading}
-            >
-              <option value="ACTIVE">Active</option>
-              <option value="INACTIVE">Inactive</option>
-            </select>
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setIsAddModalOpen(false);
-                setFormErrors({});
-              }}
-              disabled={isLoading}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleCreateCollection} disabled={isLoading}>
-              {isLoading ? 'Creating...' : 'Create'}
-            </Button>
           </div>
         </div>
-      </Modal>
-
-      {/* Edit Collection Modal */}
-      <Modal
-        isOpen={isEditModalOpen}
-        onClose={() => {
-          setIsEditModalOpen(false);
-          setFormErrors({});
-        }}
-        title="Edit Collection"
-      >
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium">Name</label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleInputChange}
-              className={`w-full px-3 py-2 border rounded-lg ${formErrors.name ? 'border-red-500' : ''
-                }`}
-              placeholder="Collection name"
-              disabled={isLoading}
-            />
-            {formErrors.name && (
-              <p className="text-red-500 text-xs mt-1">{formErrors.name}</p>
-            )}
-          </div>
-          <div>
-            <label className="block text-sm font-medium">Description</label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleInputChange}
-              className={`w-full px-3 py-2 border rounded-lg ${formErrors.description ? 'border-red-500' : ''
-                }`}
-              placeholder="Collection description"
-              disabled={isLoading}
-            />
-            {formErrors.description && (
-              <p className="text-red-500 text-xs mt-1">{formErrors.description}</p>
-            )}
-          </div>
-          <div>
-            <label className="block text-sm font-medium">Image URL</label>
-            <input
-              type="url"
-              name="image"
-              value={formData.imageUrl}
-              onChange={handleInputChange}
-              className={`w-full px-3 py-2 border rounded-lg ${formErrors.imageUrl ? 'border-red-500' : ''
-                }`}
-              placeholder="https://example.com/image.jpg"
-              disabled={isLoading}
-            />
-            {formErrors.imageUrl && (
-              <p className="text-red-500 text-xs mt-1">{formErrors.imageUrl}</p>
-            )}
-          </div>
-          <div>
-            <label className="block text-sm font-medium">Status</label>
-            <select
-              name="status"
-              value={formData.status}
-              onChange={handleInputChange}
-              className="w-full px-3 py-2 border rounded-lg"
-              disabled={isLoading}
-            >
-              <option value="ACTIVE">Active</option>
-              <option value="INACTIVE">Inactive</option>
-            </select>
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setIsEditModalOpen(false);
-                setFormErrors({});
-              }}
-              disabled={isLoading}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleUpdateCollection} disabled={isLoading}>
-              {isLoading ? 'Updating...' : 'Update'}
-            </Button>
-          </div>
-        </div>
-      </Modal>
     </div>
   );
 }

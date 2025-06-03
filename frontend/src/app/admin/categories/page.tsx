@@ -1,24 +1,23 @@
 'use client';
 
-import { useState, FormEvent, ChangeEvent, useEffect } from 'react';
+import { useState, FormEvent, ChangeEvent, useEffect, useRef } from 'react';
 import { Plus, Search, Filter, Edit, Trash2, Image as ImageIcon } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import AdminTable from '@/components/admin/Table';
 import Image from 'next/image';
 import Modal from '@/components/ui/Modal';
+import { toast } from 'react-hot-toast';
 
 // Define Category interface for type safety
 interface Category {
-  id: number;
+  id: string;
   name: string;
   description?: string;
-  image?: string;
+  imageUrl?: string;
   products?: number;
   status?: string;
   createdAt?: string;
   updatedAt?: string;
-}
-
 }
 
 interface CategoryData {
@@ -26,113 +25,206 @@ interface CategoryData {
   description: string;
   image: File | null;
   status: 'ACTIVE' | 'INACTIVE';
+}
+
+interface FormErrors {
+  name?: string;
+  description?: string;
+}
+
 export default function CategoriesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [categoryData, setCategoryData] = useState({
+  const [categoryData, setCategoryData] = useState<CategoryData>({
     name: '',
     description: '',
-    image: '', // Changed from imageUrl to match API response
+    image: null,
+    status: 'ACTIVE'
   });
+  const [formErrors, setFormErrors] = useState<FormErrors>({});
+  const [isLoading, setIsLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch categories from API
   useEffect(() => {
-    async function fetchCategories() {
-      try {
-        const response = await fetch('http://localhost:5000/api/v1/categories');
-        const data = await response.json();
-        setCategories(data);
-      } catch (error) {
-        console.error('Error fetching categories:', error);
-      }
-    }
     fetchCategories();
   }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/v1/categories');
+      if (!response.ok) throw new Error('Failed to fetch categories');
+      const data = await response.json();
+      setCategories(Array.isArray(data) ? data : []);
+    } catch (error) {
+      toast.error('Failed to fetch categories');
+    }
+  };
+
+  const validateForm = (): boolean => {
+    const errors: FormErrors = {};
+    if (!categoryData.name.trim()) {
+      errors.name = 'Category name is required';
+    }
+    if (!categoryData.description.trim()) {
+      errors.description = 'Description is required';
+    }
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   // Create a new category
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!validateForm()) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    setIsLoading(true);
     try {
+      const formData = new FormData();
+      formData.append('name', categoryData.name.trim());
+      formData.append('description', categoryData.description.trim());
+      formData.append('status', categoryData.status || 'ACTIVE');
+      if (categoryData.image) {
+        formData.append('imageUrl', categoryData.image);
+      }
+
       const response = await fetch('http://localhost:5000/api/v1/categories', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(categoryData),
+        body: formData
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create category');
+      }
+
       const data = await response.json();
       setCategories((prev) => [...prev, data]);
-      setCategoryData({ name: '', description: '', image: '' });
+      setCategoryData({ name: '', description: '', image: null, status: 'ACTIVE' });
       setIsAddModalOpen(false);
+      toast.success('Category created successfully');
     } catch (error) {
-      console.error('Error creating category:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to create category');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   // Edit a category
-  const handleEditCategory = async (id: number) => {
-    try {
-      const categoryToEdit = categories.find((category) => category.id === id);
-      if (categoryToEdit) {
-        setSelectedCategory(categoryToEdit);
-        setCategoryData({
-          name: categoryToEdit.name || '',
-          description: categoryToEdit.description || '',
-          image: categoryToEdit.image || '',
-        });
-        setIsAddModalOpen(true);
-      }
-    } catch (error) {
-      console.error('Error editing category:', error);
-    }
+  const handleEdit = (categoryToEdit: Category) => {
+    setSelectedCategory(categoryToEdit);
+    setCategoryData({
+      name: categoryToEdit.name || '',
+      description: categoryToEdit.description || '',
+      image: null, // Reset image when editing
+      status: 'ACTIVE'
+    });
+    setIsAddModalOpen(true);
   };
 
   // Update the category
-  const handleUpdateCategory = async () => {
-    if (!selectedCategory) return;
+  const handleUpdate = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!selectedCategory || !validateForm()) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    setIsLoading(true);
     try {
-      const response = await fetch(`http://localhost:5000/api/v1/categories/${selectedCategory.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(categoryData),
-      });
-      const data = await response.json();
+      const formData = new FormData();
+      formData.append('name', categoryData.name.trim());
+      formData.append('description', categoryData.description.trim());
+      formData.append('status', categoryData.status || 'ACTIVE');
+      if (categoryData.image) {
+        formData.append('imageUrl', categoryData.image);
+      }
+
+      const response = await fetch(
+        `http://localhost:5000/api/v1/categories/${selectedCategory.id}`,
+        {
+          method: 'PUT',
+          body: formData
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update category');
+      }
+
+      const updatedCategory = await response.json();
       setCategories((prev) =>
-        prev.map((category) =>
-          category.id === selectedCategory.id ? { ...category, ...data } : category
+        prev.map((cat) =>
+          cat.id === selectedCategory.id ? updatedCategory : cat
         )
       );
-      setCategoryData({ name: '', description: '', image: '' });
+      setCategoryData({ name: '', description: '', image: null, status: 'ACTIVE' });
       setSelectedCategory(null);
       setIsAddModalOpen(false);
+      toast.success('Category updated successfully');
     } catch (error) {
-      console.error('Error updating category:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to update category');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   // Delete a category
-  const handleDeleteCategory = async (id: number) => {
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this category?')) {
+      return;
+    }
+
+    setIsLoading(true);
     try {
-      await fetch(`http://localhost:5000/api/v1/categories/${id}`, {
+      const response = await fetch(`http://localhost:5000/api/v1/categories/${id}`, {
         method: 'DELETE',
       });
-      setCategories((prev) => prev.filter((category) => category.id !== id));
+
+      if (!response.ok) {
+        throw new Error('Failed to delete category');
+      }
+
+      setCategories((prev) => prev.filter((cat) => cat.id !== id));
+      toast.success('Category deleted successfully');
     } catch (error) {
-      console.error('Error deleting category:', error);
+      toast.error('Failed to delete category');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleInputChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = event.target;
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
     setCategoryData((prev) => ({
       ...prev,
       [name]: value,
     }));
+    // Clear error when user starts typing
+    if (formErrors[name as keyof FormErrors]) {
+      setFormErrors((prev) => ({
+        ...prev,
+        [name]: undefined,
+      }));
+    }
+  };
+
+  const handleImageClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setCategoryData(prev => ({ ...prev, image: file }));
+    }
   };
 
   return (
@@ -155,8 +247,9 @@ export default function CategoriesPage() {
         <Modal
           onClose={() => {
             setIsAddModalOpen(false);
-            setCategoryData({ name: '', description: '', image: '' });
+            setCategoryData({ name: '', description: '', image: null, status: 'ACTIVE' });
             setSelectedCategory(null);
+            setFormErrors({});
           }}
           isOpen={isAddModalOpen}
           title={selectedCategory ? 'Edit Category' : 'Add New Category'}
@@ -165,73 +258,115 @@ export default function CategoriesPage() {
             onSubmit={(event: FormEvent<HTMLFormElement>) => {
               event.preventDefault();
               if (selectedCategory) {
-                handleUpdateCategory();
+                handleUpdate(event);
               } else {
                 handleSubmit(event);
               }
             }}
           >
-            <div className="mb-6">
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                Category Name
-              </label>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                value={categoryData.name}
-                onChange={handleInputChange}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-300"
-                placeholder="Enter category name"
-              />
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Category Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={categoryData.name}
+                  onChange={handleInputChange}
+                  className={`w-full p-3 border ${
+                    formErrors.name ? 'border-red-500' : 'border-gray-300'
+                  } rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-300`}
+                  placeholder="Enter category name"
+                  disabled={isLoading}
+                />
+                {formErrors.name && (
+                  <p className="mt-1 text-sm text-red-500">{formErrors.name}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Description <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  name="description"
+                  value={categoryData.description}
+                  onChange={handleInputChange}
+                  className={`w-full p-3 border ${
+                    formErrors.description ? 'border-red-500' : 'border-gray-300'
+                  } rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-300`}
+                  placeholder="Enter category description"
+                  rows={4}
+                  disabled={isLoading}
+                />
+                {formErrors.description && (
+                  <p className="mt-1 text-sm text-red-500">{formErrors.description}</p>
+                )}
+              </div>
+
+              <div className="mb-6">
+                <label htmlFor="image" className="block text-sm font-medium text-gray-700 mb-2">
+                  Category Image
+                </label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="hidden"
+                />
+                <div 
+                  onClick={handleImageClick}
+                  className="cursor-pointer"
+                >
+                  {categoryData.image ? (
+                    <div className="flex items-center gap-2 p-3 border border-gray-300 rounded-lg bg-white hover:bg-gray-50">
+                      <div className="flex-1 truncate text-gray-600">
+                        {categoryData.image.name}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCategoryData(prev => ({ ...prev, image: null }));
+                        }}
+                        className="text-gray-400 hover:text-red-500"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center p-3 border border-dashed border-gray-300 rounded-lg hover:border-gray-400">
+                      <span className="text-gray-600">Click to choose an image</span>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
-            <div className="mb-6">
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-                Description
-              </label>
-              <textarea
-                id="description"
-                name="description"
-                value={categoryData.description}
-                onChange={handleInputChange}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-300"
-                placeholder="Enter description"
-                rows={4}
-              />
-            </div>
-
-            <div className="mb-6">
-              <label htmlFor="image" className="block text-sm font-medium text-gray-700 mb-2">
-                Image URL
-              </label>
-              <input
-                id="image"
-                name="image"
-                type="text"
-                value={categoryData.image}
-                onChange={handleInputChange}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-300"
-                placeholder="Enter image URL"
-              />
-            </div>
-
-            <div className="flex justify-end space-x-4">
+            <div className="flex justify-end space-x-4 mt-6">
               <Button
+                type="button"
+                variant="outline"
                 onClick={() => {
                   setIsAddModalOpen(false);
-                  setCategoryData({ name: '', description: '', image: '' });
+                  setCategoryData({ name: '', description: '', image: null, status: 'ACTIVE' });
                   setSelectedCategory(null);
+                  setFormErrors({});
                 }}
-                className="px-6 py-2 text-sm font-semibold bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition duration-300"
+                disabled={isLoading}
               >
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                className="px-6 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300"
-              >
-                {selectedCategory ? 'Update Category' : 'Save Category'}
+              <Button type="submit" disabled={isLoading}>
+                {isLoading
+                  ? selectedCategory
+                    ? 'Updating...'
+                    : 'Creating...'
+                  : selectedCategory
+                  ? 'Update Category'
+                  : 'Create Category'}
               </Button>
             </div>
           </form>
@@ -258,8 +393,8 @@ export default function CategoriesPage() {
                 className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="all">All Status</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
+                <option value="ACTIVE">Active</option>
+                <option value="INACTIVE">Inactive</option>
               </select>
               <Button variant="outline">
                 <Filter className="w-5 h-5 mr-2" />
@@ -275,13 +410,18 @@ export default function CategoriesPage() {
       accessor: 'name',
       cell: (value, row) => (
         <div className="flex items-center">
-          {row?.image ? (
+          {row?.imageUrl ? (
             <div className="relative w-12 h-12 rounded-lg overflow-hidden mr-3">
               <Image
-                src={row.image}
-                alt={row.name || ''}
-                fill
+                src={row.imageUrl}
+                alt={row.name || 'Category image'}
+                width={48}
+                height={48}
                 className="object-cover"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = '/placeholder-image.jpg';
+                }}
               />
             </div>
           ) : (
@@ -290,9 +430,9 @@ export default function CategoriesPage() {
             </div>
           )}
           <div>
-            <div className="font-medium">{row?.name}</div>
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              {row?.description}
+            <div className="font-medium text-gray-900">{row?.name || 'Unnamed Category'}</div>
+            <div className="text-sm text-gray-500">
+              {row?.description || 'No description available'}
             </div>
           </div>
         </div>
@@ -301,7 +441,11 @@ export default function CategoriesPage() {
     {
       header: 'Products',
       accessor: 'products',
-      cell: (value) => (Array.isArray(value) ? value.length : 0),
+      cell: (value) => (
+        <span className="text-gray-900">
+          {Array.isArray(value) ? value.length : '0'}
+        </span>
+      ),
     },
     {
       header: 'Status',
@@ -309,12 +453,12 @@ export default function CategoriesPage() {
       cell: (value) => (
         <span
           className={`px-2 py-1 rounded-full text-xs font-medium ${
-            value === 'Active'
+            value === 'ACTIVE'
               ? 'bg-green-100 text-green-800'
-              : 'bg-red-100 text-red-800'
+              : 'bg-gray-100 text-gray-800'
           }`}
         >
-          {value || 'Unknown'}
+          {value || 'INACTIVE'}
         </span>
       ),
     },
@@ -323,11 +467,24 @@ export default function CategoriesPage() {
       accessor: 'id',
       cell: (id) => (
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={() => handleEditCategory(id)}>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => {
+              const category = categories.find(c => c.id === id);
+              if (category) {
+                handleEdit(category);
+              }
+            }}
+          >
             <Edit className="w-4 h-4" />
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => handleDeleteCategory(id)}>
-            <Trash2 className="w-4 h-4 text-error-600" />
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => handleDelete(id)}
+          >
+            <Trash2 className="w-4 h-4 text-red-600" />
           </Button>
         </div>
       ),

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
+import { useCartStore } from '@/lib/store';
 import {
   Search,
   Heart,
@@ -13,6 +14,8 @@ import {
   Sun,
   Moon,
   LogOut,
+  ChevronDown,
+  ArrowRight
 } from 'lucide-react';
 import Logo from '@/components/ui/Logo';
 import CartDrawer from '@/components/cart/CartDrawer';
@@ -26,9 +29,19 @@ interface UserPayload {
   isActive: boolean;
 }
 
+interface Category {
+  id: string;
+  name: string;
+  description?: string;
+}
+
 const mainLinks = [
   { name: 'Home', href: '/' },
-  { name: 'Shop', href: '/categories' },
+  { 
+    name: 'Shop', 
+    href: '/categories',
+    hasDropdown: true 
+  },
   { name: 'Collections', href: '/collections' },
   { name: 'About', href: '/about' },
   { name: 'Contact', href: '/contact' },
@@ -40,9 +53,11 @@ export default function Navbar() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [headerAnnouncement, setHeaderAnnouncement] = useState('');
   const [user, setUser] = useState<UserPayload | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const { theme, toggleTheme } = useTheme();
   const pathname = usePathname();
-  const cartItemCount = 0;
+  const cartItemCount = useCartStore((state) => state.getItemCount());
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 10);
@@ -61,6 +76,19 @@ export default function Navbar() {
       }
     };
     fetchHeader();
+  }, []);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/v1/categories');
+        const data = await res.json();
+        setCategories(data);
+      } catch (err) {
+        console.error('Failed to fetch categories:', err);
+      }
+    };
+    fetchCategories();
   }, []);
 
   useEffect(() => {
@@ -126,16 +154,45 @@ export default function Navbar() {
 
             <div className="hidden lg:flex items-center space-x-8">
               {mainLinks.map((link) => (
+                <div key={link.name} className="relative group">
                 <Link
-                  key={link.name}
                   href={link.href}
-                  className="text-gray-700 dark:text-gray-200 relative group"
+                    className="text-gray-700 dark:text-gray-200 relative flex items-center"
                 >
                   <span className="relative">
                     {link.name}
                     <span className="absolute inset-x-0 -bottom-1 h-0.5 bg-primary-600 dark:bg-primary-400 transform origin-left scale-x-0 transition-transform group-hover:scale-x-100" />
                   </span>
+                    {link.hasDropdown && (
+                      <ChevronDown className="ml-1 h-4 w-4 transition-transform group-hover:rotate-180" />
+                    )}
+                  </Link>
+                  
+                  {link.hasDropdown && (
+                    <div className="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-card rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 py-2">
+                      {categories.map((category) => (
+                        <Link
+                          key={category.id}
+                          href={`/categories/${category.id}`}
+                          className={cn(
+                            "block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors",
+                            hoveredCategory === category.id && "bg-gray-100 dark:bg-gray-800"
+                          )}
+                          onMouseEnter={() => setHoveredCategory(category.id)}
+                          onMouseLeave={() => setHoveredCategory(null)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span>{category.name}</span>
+                            <ArrowRight className={cn(
+                              "w-4 h-4 transform transition-transform",
+                              hoveredCategory === category.id && "translate-x-1"
+                            )} />
+                          </div>
                 </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
 
@@ -147,12 +204,12 @@ export default function Navbar() {
                 <Search className="h-5 w-5" />
               </button>
 
-              <Link
+              {/* <Link
                 href="/wishlist"
                 className="text-gray-700 dark:text-gray-200 hover:text-primary-600 dark:hover:text-primary-400"
               >
                 <Heart className="h-5 w-5" />
-              </Link>
+              </Link> */}
 
               <button
                 onClick={() => setIsCartOpen(true)}
@@ -204,7 +261,7 @@ export default function Navbar() {
                 </Link>
               )}
 
-              {/* <button
+              <button
                 onClick={toggleTheme}
                 className="text-gray-700 dark:text-gray-200 hover:text-primary-600 dark:hover:text-primary-400"
               >
@@ -213,7 +270,7 @@ export default function Navbar() {
                 ) : (
                   <Moon className="h-5 w-5" />
                 )}
-              </button> */}
+              </button>
             </div>
           </div>
         </nav>

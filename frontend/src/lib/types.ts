@@ -1,18 +1,29 @@
+export interface Category {
+  id: string;
+  name: string;
+  description?: string;
+  imageUrl?: string;
+  status?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface Product {
-  status: any;
+  status: 'IN_STOCK' | 'LOW_STOCK' | 'OUT_OF_STOCK';
   id: string;
   name: string;
   description: string;
   price: number;
   original_price?: number;
   stock: number;
-  category: string;
+  category: string | Category;
   brand: string;
   rating: number;
   review_count: number;
   created_at: string;
   updated_at: string;
   images?: ProductImage[];
+  imageUrl?: string;
   ingredients?: ProductIngredient[];
 }
 

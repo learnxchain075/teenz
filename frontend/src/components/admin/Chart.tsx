@@ -25,38 +25,49 @@ ChartJS.register(
   Filler
 );
 
-interface ChartProps {
-  type: 'line' | 'bar';
+interface ChartData {
+  daily: number;
+  weekly: number;
+  monthly: number;
+  total: number;
+  yearly?: number;
 }
 
-export default function AdminChart({ type }: ChartProps) {
+interface ChartProps {
+  type: 'line' | 'bar';
+  data?: ChartData;
+  title?: string;
+}
+
+export default function AdminChart({ type, data, title }: ChartProps) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
-  const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-  
-  const lineData = {
-    labels,
-    datasets: [
-      {
-        label: 'Revenue',
-        data: [3000, 4500, 4000, 6000, 5500, 7000],
-        borderColor: 'hsl(246, 80%, 60%)',
-        backgroundColor: 'hsla(246, 80%, 60%, 0.1)',
-        fill: true,
-        tension: 0.4,
-      },
-    ],
-  };
+  // If no data provided, show empty state
+  if (!data) {
+    return (
+      <div className="h-64 flex items-center justify-center text-gray-500 dark:text-gray-400">
+        No data available
+      </div>
+    );
+  }
 
-  const barData = {
+  const labels = ['Daily', 'Weekly', 'Monthly', 'Yearly', 'Total'];
+  const values = [data.daily, data.weekly, data.monthly, data.yearly || 0, data.total];
+  
+  const chartData = {
     labels,
     datasets: [
       {
-        label: 'Orders',
-        data: [65, 90, 80, 120, 110, 140],
-        backgroundColor: 'hsla(246, 80%, 60%, 0.8)',
-        borderRadius: 4,
+        label: title || (type === 'line' ? 'Revenue' : 'Orders'),
+        data: values,
+        borderColor: 'hsl(246, 80%, 60%)',
+        backgroundColor: type === 'line' 
+          ? 'hsla(246, 80%, 60%, 0.1)' 
+          : 'hsla(246, 80%, 60%, 0.8)',
+        fill: type === 'line',
+        tension: type === 'line' ? 0.4 : 0,
+        borderRadius: type === 'bar' ? 4 : 0,
       },
     ],
   };
@@ -68,6 +79,16 @@ export default function AdminChart({ type }: ChartProps) {
       legend: {
         display: false,
       },
+      tooltip: {
+        callbacks: {
+          label: (context: any) => {
+            const value = context.raw;
+            return type === 'line' 
+              ? `$${value.toLocaleString()}`
+              : value.toLocaleString();
+          }
+        }
+      }
     },
     scales: {
       x: {
@@ -85,6 +106,11 @@ export default function AdminChart({ type }: ChartProps) {
         },
         ticks: {
           color: isDark ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)',
+          callback: (value: number) => {
+            return type === 'line' 
+              ? `$${value.toLocaleString()}`
+              : value.toLocaleString();
+          }
         },
       },
     },
@@ -93,9 +119,9 @@ export default function AdminChart({ type }: ChartProps) {
   return (
     <div className="h-64">
       {type === 'line' ? (
-        <Line data={lineData} options={options} />
+        <Line data={chartData} options={options} />
       ) : (
-        <Bar data={barData} options={options} />
+        <Bar data={chartData} options={options} />
       )}
     </div>
   );

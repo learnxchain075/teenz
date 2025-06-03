@@ -5,7 +5,7 @@ import { prisma } from "../../db/prisma";
 export const createProductReview = async (req: Request, res: Response): Promise<void> => {
   try {
     const { productId, userId, rating, comment } = req.body;
-
+console.log("object", req.body);
     if (!productId || !userId || !rating) {
       res.status(400).json({ error: "Product ID, User ID, and Rating are required." });
       return;
@@ -22,7 +22,7 @@ export const createProductReview = async (req: Request, res: Response): Promise<
         }
       },
     });
-
+// console.log("object", hasPurchased);
     if (!hasPurchased) {
       res.status(403).json({ error: "You can only review products you've purchased." });
       return;
@@ -149,5 +149,40 @@ export const deleteProductReview = async (req: Request, res: Response): Promise<
     res.status(200).json({ message: "Review deleted" });
   } catch (error) {
     res.status(500).json({ error: "Failed to delete review", details: error instanceof Error ? error.message : String(error) });
+  }
+};
+
+// ✅ Get all reviews (for admin)
+export const getAllReviews = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const reviews = await prisma.productReview.findMany({
+      include: {
+        user: {
+          select: {
+            name: true,
+            email: true,
+            profilePicture: true,
+          },
+        },
+        product: {
+          select: {
+            name: true,
+            images: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    res.status(200).json({ success: true, reviews });
+  } catch (error) {
+    console.error('[Get All Reviews]', error);
+    res.status(500).json({ 
+      success: false, 
+      error: "Failed to fetch reviews", 
+      details: error instanceof Error ? error.message : String(error) 
+    });
   }
 };

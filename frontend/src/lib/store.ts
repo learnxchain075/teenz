@@ -22,71 +22,39 @@ export const useCartStore = create<CartStore>()(
     (set, get) => ({
       items: [],
       addItem: async (product, quantity = 1) => {
-        try {
-          const response = await fetch('/api/cart/add', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ productId: product.id, quantity }),
-          });
+        set((state) => {
+          const existingItem = state.items.find(
+            (item) => item.product.id === product.id
+          );
 
-          if (!response.ok) throw new Error('Failed to add item');
-
-          set((state) => {
-            const existingItem = state.items.find(
-              (item) => item.product.id === product.id
-            );
-
-            if (existingItem) {
-              return {
-                items: state.items.map((item) =>
-                  item.product.id === product.id
-                    ? { ...item, quantity: item.quantity + quantity }
-                    : item
-                ),
-              };
-            }
-
+          if (existingItem) {
             return {
-              items: [...state.items, { product, quantity }],
+              items: state.items.map((item) =>
+                item.product.id === product.id
+                  ? { ...item, quantity: item.quantity + quantity }
+                  : item
+              ),
             };
-          });
-        } catch (error) {
-          console.error('Failed to add item to cart:', error);
-        }
+          }
+
+          return {
+            items: [...state.items, { product, quantity }],
+          };
+        });
       },
       removeItem: async (productId) => {
-        try {
-          const response = await fetch(`/api/cart/remove/${productId}`, {
-            method: 'DELETE',
-          });
-
-          if (!response.ok) throw new Error('Failed to remove item');
-
-          set((state) => ({
-            items: state.items.filter((item) => item.product.id !== productId),
-          }));
-        } catch (error) {
-          console.error('Failed to remove item from cart:', error);
-        }
+        set((state) => ({
+          items: state.items.filter((item) => item.product.id !== productId),
+        }));
       },
       updateQuantity: async (productId, quantity) => {
-        try {
-          const response = await fetch('/api/cart/update', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ productId, quantity }),
-          });
-
-          if (!response.ok) throw new Error('Failed to update quantity');
-
-          set((state) => ({
-            items: state.items.map((item) =>
-              item.product.id === productId ? { ...item, quantity } : item
-            ),
-          }));
-        } catch (error) {
-          console.error('Failed to update cart quantity:', error);
-        }
+        if (quantity < 1) return;
+        
+        set((state) => ({
+          items: state.items.map((item) =>
+            item.product.id === productId ? { ...item, quantity } : item
+          ),
+        }));
       },
       clearCart: () => set({ items: [] }),
       getTotal: () => {

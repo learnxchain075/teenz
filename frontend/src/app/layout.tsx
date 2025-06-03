@@ -9,6 +9,7 @@ import ModalOffer from '@/components/ui/ModalOffer';
 import CookieConsent from '@/components/ui/CookieConsent';
 import Providers from './providers';
 import { usePathname } from 'next/navigation';
+import { Toaster } from 'react-hot-toast';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -128,6 +129,7 @@ export default function RootLayout({
             children
           )}
         </Providers>
+        <Toaster position="top-right" />
       </body>
     </html>
   );

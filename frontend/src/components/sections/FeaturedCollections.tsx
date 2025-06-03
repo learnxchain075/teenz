@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -9,53 +9,17 @@ import { Autoplay, Navigation, Pagination } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ImageIcon } from 'lucide-react';
 
 interface Collection {
-  id: number;
-  title: string;
-  image: string;
-  itemCount: number;
-  href: string;
+  id: string;
+  name: string;
+  description: string;
+  imageUrl: string;
+  itemCount?: number;
+  products?: any[];
+  status?: string;
 }
-
-const collections: Collection[] = [
-  {
-    id: 1,
-    title: 'Summer Essentials',
-    image: 'https://images.pexels.com/photos/1549200/pexels-photo-1549200.jpeg?auto=compress&cs=tinysrgb&w=1600',
-    itemCount: 24,
-    href: '/collections/summer-essentials',
-  },
-  {
-    id: 2,
-    title: 'New Arrivals',
-    image: 'https://images.pexels.com/photos/2866119/pexels-photo-2866119.jpeg?auto=compress&cs=tinysrgb&w=1600',
-    itemCount: 18,
-    href: '/collections/new-arrivals',
-  },
-  {
-    id: 3,
-    title: 'Bestsellers',
-    image: 'https://images.pexels.com/photos/2866119/pexels-photo-2866119.jpeg?auto=compress&cs=tinysrgb&w=1600',
-    itemCount: 32,
-    href: '/collections/bestsellers',
-  },
-  {
-    id: 4,
-    title: 'Accessories',
-    image: 'https://images.pexels.com/photos/1152077/pexels-photo-1152077.jpeg?auto=compress&cs=tinysrgb&w=1600',
-    itemCount: 45,
-    href: '/collections/accessories',
-  },
-  {
-    id: 5,
-    title: 'Limited Edition',
-    image: 'https://images.pexels.com/photos/2866119/pexels-photo-2866119.jpeg?auto=compress&cs=tinysrgb&w=1600',
-    itemCount: 12,
-    href: '/collections/limited-edition',
-  },
-];
 
 interface FeaturedCollectionsProps {
   autoplay?: boolean;
@@ -67,6 +31,45 @@ export default function FeaturedCollections({
   items = 5,
 }: FeaturedCollectionsProps) {
   const swiperRef = useRef(null);
+  const [collections, setCollections] = useState<Collection[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCollections = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/v1/collections');
+        const data = await response.json();
+        console.log('Collections API Response:', data);
+        // Only show active collections
+        const activeCollections = data.filter((col: Collection) => col.status === 'ACTIVE');
+        setCollections(activeCollections);
+      } catch (error) {
+        console.error('Error fetching collections:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCollections();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <section className="py-20 bg-gray-50 dark:bg-gray-900">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <div className="h-8 w-64 bg-gray-200 dark:bg-gray-700 rounded mx-auto mb-4 animate-pulse" />
+            <div className="h-4 w-96 bg-gray-200 dark:bg-gray-700 rounded mx-auto animate-pulse" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="aspect-[3/4] bg-gray-200 dark:bg-gray-700 rounded-2xl animate-pulse" />
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="py-20 bg-gray-50 dark:bg-gray-900">
@@ -122,26 +125,55 @@ export default function FeaturedCollections({
             }}
             className="pb-12"
           >
-            {collections.slice(0, items).map((collection) => (
+            {collections.map((collection) => (
               <SwiperSlide key={collection.id}>
-                <Link href={collection.href} className="block group">
+                <Link href={`/shop?collection=${collection.id}`} className="block group">
                   <div className="relative overflow-hidden rounded-2xl">
-                    <div className="aspect-[3/4]">
-                      <Image
-                        src={collection.image}
-                        alt={collection.title}
-                        fill
-                        className="object-cover transition-transform duration-300 group-hover:scale-110"
-                      />
+                    <div className="aspect-[3/4] bg-gray-100 dark:bg-gray-800">
+                      {collection.imageUrl ? (
+                        <Image
+                          src={collection.imageUrl}
+                          alt={collection.name}
+                          fill
+                          className="object-cover transition-transform duration-300 group-hover:scale-110"
+                          sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                          priority={true}
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            const parent = target.parentElement;
+                            if (parent) {
+                              const placeholder = document.createElement('div');
+                              placeholder.className = 'w-full h-full flex items-center justify-center';
+                              placeholder.innerHTML = `
+                                <div class="text-center p-4">
+                                  <svg class="w-12 h-12 mx-auto mb-2 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                  </svg>
+                                  <p class="text-sm text-gray-500">Coming Soon</p>
+                                </div>
+                              `;
+                              parent.appendChild(placeholder);
+                            }
+                          }}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <div className="text-center p-4">
+                            <ImageIcon className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+                            <p className="text-sm text-gray-500">Coming Soon</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                     <div className="absolute bottom-0 left-0 right-0 p-6">
                       <h3 className="text-xl font-semibold text-white mb-2">
-                        {collection.title}
+                        {collection.name}
                       </h3>
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-200">
-                          {collection.itemCount} items
+                          {collection.products ? `${collection.products.length} items` : '0 items'}
                         </span>
                         <ArrowRight className="w-5 h-5 text-white transform transition-transform group-hover:translate-x-1" />
                       </div>

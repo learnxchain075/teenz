@@ -11,7 +11,7 @@ import paymentRoutes from "./payment/paymentRoutes";
 import reviewRoutes from "./review/reviewRoutes";
 import orderRoutes from "./order/orderRoutes";
 import dashboardStatsRoutes from "./dashboard/dashboardStatsRoutes";
-
+import   addressRoutes from "./address/addressRoutes";  
 
 // Create a main API router
 const apiRouter = express.Router();
@@ -27,10 +27,9 @@ apiRouter.use(announcmentRoutes);
 apiRouter.use(emailSubscriberRoutes);
 apiRouter.use(contactRoutes);
 apiRouter.use(producttagRoutes);
-apiRouter.use(reviewRoutes);
+apiRouter.use( reviewRoutes);
 apiRouter.use(paymentRoutes);
 apiRouter.use(orderRoutes);
 apiRouter.use(dashboardStatsRoutes);
-
-
+apiRouter.use(addressRoutes);
 export default apiRouter;

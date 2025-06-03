@@ -6,6 +6,18 @@ import { useRouter } from 'next/navigation';
 import { Pencil, LogOut, Mail, Calendar, UserRoundCheck } from 'lucide-react';
 import clsx from 'clsx';
 import Button from '@/components/ui/Button';
+import Link from 'next/link';
+import AddressManager from '@/components/address/AddressManager';
+import { toast } from 'react-hot-toast';
+
+interface Address {
+  id?: number;
+  street?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
+}
 
 export default function UserProfile() {
   const [user, setUser] = useState<any>(null);
@@ -53,6 +65,98 @@ export default function UserProfile() {
   }
 
   const profileSrc = user.profilePicture || '/avatar-placeholder.png';
+
+  const handleAddAddress = async (address: Omit<Address, 'id'>) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      const res = await fetch('http://localhost:5000/api/v1/address', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ ...address, userId: user.id }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to add address');
+      }
+
+      const data = await res.json();
+      setUser({
+        ...user,
+        Address: [...(user.Address || []), data.address],
+      });
+      toast.success('Address added successfully');
+    } catch (error) {
+      console.error('Failed to add address:', error);
+      toast.error('Failed to add address');
+      throw error;
+    }
+  };
+
+  const handleUpdateAddress = async (id: number, address: Omit<Address, 'id'>) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      const res = await fetch(`http://localhost:5000/api/v1/address/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(address),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to update address');
+      }
+
+      const data = await res.json();
+      setUser({
+        ...user,
+        Address: user.Address.map((addr: any) =>
+          addr.id === id ? data.address : addr
+        ),
+      });
+      toast.success('Address updated successfully');
+    } catch (error) {
+      console.error('Failed to update address:', error);
+      toast.error('Failed to update address');
+      throw error;
+    }
+  };
+
+  const handleDeleteAddress = async (id: number) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      const res = await fetch(`http://localhost:5000/api/v1/address/${id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to delete address');
+      }
+
+      setUser({
+        ...user,
+        Address: user.Address.filter((addr: any) => addr.id !== id),
+      });
+      toast.success('Address deleted successfully');
+    } catch (error) {
+      console.error('Failed to delete address:', error);
+      toast.error('Failed to delete address');
+      throw error;
+    }
+  };
 
   return (
     <div className="max-w-5xl mx-auto p-6">
@@ -105,32 +209,86 @@ export default function UserProfile() {
       </div>
 
       {/* Address */}
-      <div className="mt-8 bg-white dark:bg-gray-900 p-6 rounded-xl shadow space-y-4">
-        <h3 className="text-xl font-semibold">Address</h3>
-        {user.Address?.length > 0 ? (
-          user.Address.map((addr: any, idx: number) => (
-            <div key={idx} className="text-gray-700 dark:text-gray-300">
-              <p>{addr.line1}, {addr.city}, {addr.state}, {addr.zip}</p>
-            </div>
-          ))
-        ) : (
-          <p className="text-gray-500 italic">No address added.</p>
-        )}
+      <div className="mt-8 bg-white dark:bg-gray-900 p-6 rounded-xl shadow">
+        <AddressManager
+          addresses={user.Address || []}
+          onAddAddress={handleAddAddress}
+          onUpdateAddress={handleUpdateAddress}
+          onDeleteAddress={handleDeleteAddress}
+        />
       </div>
 
       {/* Orders */}
       <div className="mt-8 bg-white dark:bg-gray-900 p-6 rounded-xl shadow space-y-4">
-        <h3 className="text-xl font-semibold">Orders</h3>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-semibold">Orders</h3>
+          <Link href="/account/orders" className="text-primary-600 hover:text-primary-700 text-sm">
+            View All Orders →
+          </Link>
+        </div>
         {user.Order?.length > 0 ? (
-          <ul className="space-y-2 text-gray-700 dark:text-gray-300">
+          <div className="space-y-6">
             {user.Order.map((order: any) => (
-              <li key={order.id}>
-                <strong>#{order.id}</strong> - {order.status} - ₹{order.totalAmount}
-              </li>
+              <div key={order.id} className="border dark:border-gray-700 rounded-lg p-4">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h4 className="font-medium text-lg">Order #{order.id}</h4>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {new Date(order.createdAt).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-end gap-2">
+                    <span className={clsx(
+                      "px-3 py-1 rounded-full text-sm font-medium",
+                      order.status === 'ACTIVE' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
+                      order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                      order.status === 'CANCELLED' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' :
+                      'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
+                    )}>
+                      {order.status}
+                    </span>
+                    <span className={clsx(
+                      "text-sm",
+                      order.isPaid ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                    )}>
+                      {order.isPaid ? 'Paid' : 'Payment Pending'}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="mt-4 flex justify-between items-center pt-4 border-t dark:border-gray-700">
+                  <div className="space-y-1">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Order ID: <span className="font-mono">{order.razorpayOrderId || order.id}</span>
+                    </p>
+                    {order.couponCode && (
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Coupon Applied: <span className="font-medium text-primary-600">{order.couponCode}</span>
+                      </p>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Total Amount</p>
+                    <p className="text-lg font-semibold">₹{order.total?.toFixed(2) || '0.00'}</p>
+                  </div>
+                </div>
+              </div>
             ))}
-          </ul>
+          </div>
         ) : (
-          <p className="text-gray-500 italic">No orders yet.</p>
+          <div className="text-center py-8">
+            <p className="text-gray-500 italic mb-4">No orders yet.</p>
+            <Link 
+              href="/products" 
+              className="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700"
+            >
+              Start Shopping
+            </Link>
+          </div>
         )}
       </div>
 
