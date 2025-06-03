@@ -19,6 +19,13 @@ interface Category {
   updatedAt?: string;
 }
 
+}
+
+interface CategoryData {
+  name: string;
+  description: string;
+  image: File | null;
+  status: 'ACTIVE' | 'INACTIVE';
 export default function CategoriesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
