@@ -3,14 +3,41 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
 
-
   images: {
-  domains: ['chatgpt.com', 'images.pexels.com', 'images.unsplash.com', 'images.pexels.com',
-    'media.istockphoto.com','res.cloudinary.com', 'cdn.pixabay.com', 'images.unsplash.com', 'cdn.pixabay.com', 'images.pexels.com','collection.cloudinary.com','drive.google.com'],
-},
+    remotePatterns: [
+     
+      {
+        protocol: 'https',
+        hostname: 'images.pexels.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'media.istockphoto.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdn.pixabay.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'collection.cloudinary.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'drive.google.com',
+      },
+    ],
+  },
 
   experimental: {
-    appDir: true, // Ensure the app directory is enabled if using app directory
     serverActions: {}, // Use an object here instead of a boolean
   },
   transpilePackages: ['framer-motion'],
