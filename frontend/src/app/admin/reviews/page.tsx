@@ -147,24 +147,47 @@ export default function ReviewsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
 
-  // Load temporary data instead of making API calls
+  // Fetch reviews from backend
   useEffect(() => {
-    const loadTemporaryData = () => {
+    const fetchReviews = async () => {
       try {
         setLoading(true);
-        // Simulate API delay
-        setTimeout(() => {
-          setReviews(temporaryReviews);
-          setLoading(false);
-        }, 1000);
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+          setError('Authentication required');
+          return;
+        }
+
+        const response = await fetch('http://localhost:5000/api/v1/admin/reviews', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to fetch reviews');
+        }
+
+        if (!data.success) {
+          throw new Error(data.error || 'Failed to fetch reviews');
+        }
+
+        setReviews(data.reviews);
+        setError(null);
       } catch (err: any) {
         console.error('Error loading reviews:', err);
         setError('Failed to load reviews');
+        toast.error(err.message || 'Failed to load reviews');
+      } finally {
         setLoading(false);
       }
     };
 
-    loadTemporaryData();
+    fetchReviews();
   }, []);
 
   // Filter reviews
@@ -182,15 +205,37 @@ export default function ReviewsPage() {
   // Handle review status update
   const handleStatusUpdate = async (reviewId: string, newStatus: 'APPROVED' | 'REJECTED') => {
     try {
-      // Update local state only (no API call)
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        toast.error('Authentication required');
+        return;
+      }
+
+      const response = await fetch(`http://localhost:5000/api/v1/admin/review/status/${reviewId}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update review status');
+      }
+
+      // Update local state after successful API call
       setReviews(reviews.map(review => 
         review.id === reviewId ? { ...review, status: newStatus } : review
       ));
       
-      toast.success(`Review ${newStatus.toLowerCase()} successfully`);
+      toast.success(data.message || `Review ${newStatus.toLowerCase()} successfully`);
     } catch (err: any) {
       console.error('Error updating review status:', err);
-      toast.error('Failed to update review status');
+      toast.error(err.message || 'Failed to update review status');
     }
   };
 

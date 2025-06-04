@@ -21,6 +21,7 @@ import Logo from '@/components/ui/Logo';
 import CartDrawer from '@/components/cart/CartDrawer';
 import SearchModal from '@/components/layout/SearchModal';
 import Image from 'next/image';
+import clsx from 'clsx';
 
 interface UserPayload {
   id: number;
@@ -51,7 +52,11 @@ const mainLinks = [
   { name: 'Contact', href: '/contact' },
 ];
 
-export default function Navbar() {
+interface NavbarProps {
+  className?: string;
+}
+
+export default function Navbar({ className }: NavbarProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -157,11 +162,12 @@ export default function Navbar() {
       </div>
 
       <header
-        className={cn(
+        className={clsx(
           'sticky top-0 z-50 w-full transition-all duration-300',
           isScrolled
             ? 'bg-white/90 dark:bg-card/90 backdrop-blur-sm shadow-sm'
-            : 'bg-white dark:bg-card'
+            : 'bg-white dark:bg-card',
+          className
         )}
       >
         <nav className="container mx-auto px-4 sm:px-6 lg:px-8">

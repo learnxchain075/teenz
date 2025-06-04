@@ -26,9 +26,9 @@ export default function AccountLayout({ children }: AccountLayoutProps) {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-24">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Sidebar Navigation */}
+          {/* Sidebar Navigation - Fixed height and scrollable */}
           <div className="lg:w-64 flex-shrink-0">
-            <nav className="bg-white dark:bg-card rounded-xl shadow-lg p-4">
+            <nav className="bg-white dark:bg-card rounded-xl shadow-lg p-4 lg:sticky lg:top-24">
               {navigation.map((item) => {
                 const isActive = pathname === item.href;
                 
@@ -62,9 +62,11 @@ export default function AccountLayout({ children }: AccountLayoutProps) {
             </nav>
           </div>
 
-          {/* Main Content */}
-          <div className="flex-1">
-            {children}
+          {/* Main Content - Scrollable with max height */}
+          <div className="flex-1 min-h-0">
+            <div className="h-full overflow-auto">
+              {children}
+            </div>
           </div>
         </div>
       </div>

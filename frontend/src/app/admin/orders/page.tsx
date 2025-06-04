@@ -30,7 +30,14 @@ interface Order {
   date: string;
   total: number;
   status: OrderStatus;
-  OrderItem: OrderItem[];
+  items: Array<{
+    id: string;
+    name: string;
+    quantity: number;
+    price: number;
+    productId: string;
+    image?: string;
+  }>;
   userId: string;
   shippingAddress?: {
     street: string;
@@ -177,20 +184,13 @@ export default function OrdersPage() {
   };
 
   // Handle view order details
-  const handleViewOrder = async (orderId: string) => {
-    try {
-      const response = await axios.get<ApiResponse<Order>>(`http://localhost:5000/api/v1/orders/${orderId}`);
-      console.log('Order details:', response.data);
-      
-      if (response.data.success && response.data.order) {
-        setSelectedOrder(response.data.order);
-        setIsModalOpen(true);
-      } else {
-        throw new Error(response.data.error || 'Failed to fetch order details');
-      }
-    } catch (err: any) {
-      console.error('Error fetching order details:', err);
-      toast.error('Failed to fetch order details');
+  const handleViewOrder = (orderId: string) => {
+    const order = orders.find(order => order.id === orderId);
+    if (order) {
+      setSelectedOrder(order);
+      setIsModalOpen(true);
+    } else {
+      toast.error('Order not found');
     }
   };
 

@@ -15,19 +15,18 @@ interface OrderItem {
   quantity: number;
   price: number;
   productId: string;
-  product?: {
-    name: string;
-    images?: Array<{ url: string }>;
-  };
+  image: string;
 }
 
 interface Order {
   id: string;
   orderName: string;
+  customerName: string;
+  itemCount: number;
   date: string;
   total: number;
   status: string;
-  OrderItem: OrderItem[];
+  items: OrderItem[];
 }
 
 interface ApiResponse {
@@ -75,14 +74,14 @@ export default function OrdersPage() {
       console.log('API Response:', data);
 
       if (data.success) {
-        // Transform the data to match our frontend structure and ensure OrderItem is always an array
+        // Transform the data to match our frontend structure
         const transformedOrders = data.orders.map(order => ({
           ...order,
-          OrderItem: order.OrderItem || [], // Ensure OrderItem is always an array
-          status: order.status?.toLowerCase() || 'pending'
+          items: order.items || [], // Ensure items is always an array
+          status: order.status?.toLowerCase() || 'active'
         }));
         console.log('Transformed Orders:', transformedOrders);
-        setOrders(transformedOrders as Order[]);
+        setOrders(transformedOrders);
       } else {
         throw new Error(data.message || 'Failed to fetch orders');
       }
@@ -194,102 +193,69 @@ export default function OrdersPage() {
             </Link>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-6 max-h-[calc(100vh-250px)] overflow-y-auto pr-4">
             {filteredOrders.map((order) => (
               <motion.div
                 key={order.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white dark:bg-card rounded-xl shadow-lg overflow-hidden"
+                transition={{ duration: 0.3 }}
+                className="bg-white dark:bg-card rounded-xl shadow-lg p-6"
               >
-                <div className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-4">
-                      <Package className="w-6 h-6 text-primary-600 dark:text-primary-400" />
-                      <div>
-                        <h3 className="font-semibold">
-                          {order.orderName || `Order #${order.id.slice(-6)}`}
-                        </h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          Placed on {new Date(order.date).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                    <div>
-                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        order.status === 'delivered'
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                          : order.status === 'cancelled'
-                          ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-                          : order.status === 'shipped'
-                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
-                          : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
-                      }`}>
-                        {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                      </span>
-                    </div>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-lg font-semibold mb-1">{order.orderName}</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Ordered on {new Date(order.date).toLocaleDateString()}
+                    </p>
                   </div>
+                  <div className="mt-2 sm:mt-0">
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+                      ${order.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
+                        order.status === 'inactive' ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400' :
+                        'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'
+                      }`}
+                    >
+                      {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                    </span>
+                  </div>
+                </div>
 
-                  <div className="border-t border-gray-200 dark:border-gray-800 pt-4">
-                    {order.OrderItem && order.OrderItem.length > 0 ? (
-                      order.OrderItem.map((item) => (
-                        <div
-                          key={item.id}
-                          className="flex items-center justify-between py-2"
-                        >
-                          <div className="flex items-center gap-4">
-                            {item.product?.images?.[0]?.url ? (
-                              <div className="relative w-12 h-12 rounded-lg overflow-hidden">
-                                <img
-                                  src={item.product.images[0].url}
-                                  alt={item.product.name}
-                                  className="object-cover w-full h-full"
-                                />
-                              </div>
-                            ) : (
-                              <div className="w-12 h-12 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                                <Package className="w-6 h-6 text-gray-400" />
-                              </div>
-                            )}
-                            <div>
-                              <p className="font-medium">{item.product?.name || 'Product'}</p>
-                              <p className="text-sm text-gray-500 dark:text-gray-400">
-                                Quantity: {item.quantity}
-                              </p>
-                            </div>
-                          </div>
-                          <p className="font-medium">
-                            {formatCurrency(item.price * item.quantity)}
+                <div className="border-t border-gray-200 dark:border-gray-700 -mx-6 px-6 py-4">
+                  <div className="space-y-4">
+                    {order.items.map((item) => (
+                      <div key={item.id} className="flex items-center space-x-4">
+                        <div className="flex-shrink-0 w-16 h-16">
+                          <img
+                            src={item.image || '/placeholder.png'}
+                            alt={item.name}
+                            className="w-full h-full object-cover rounded-lg"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                            {item.name}
+                          </p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            Qty: {item.quantity} × {formatCurrency(item.price)}
                           </p>
                         </div>
-                      ))
-                    ) : (
-                      <div className="text-center py-4 text-gray-500 dark:text-gray-400">
-                        No items in this order
+                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                          {formatCurrency(item.quantity * item.price)}
+                        </div>
                       </div>
-                    )}
+                    ))}
                   </div>
+                </div>
 
-                  <div className="border-t border-gray-200 dark:border-gray-800 mt-4 pt-4 flex items-center justify-between">
-                    <div className="text-lg font-semibold">
-                      Total: {formatCurrency(order.total)}
-                    </div>
-                    <div className="flex gap-4">
-                      {order.status !== 'cancelled' && order.status !== 'delivered' && (
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => window.open(`/track-order/${order.id}`, '_blank')}
-                        >
-                          Track Order
-                        </Button>
-                      )}
-                      <Link href={`/account/orders/${order.id}`}>
-                        <Button variant="outline" size="sm">
-                          View Details
-                        </Button>
-                      </Link>
-                    </div>
+                <div className="border-t border-gray-200 dark:border-gray-700 -mx-6 px-6 pt-4 mt-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      Total Amount
+                    </span>
+                    <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                      {formatCurrency(order.total)}
+                    </span>
                   </div>
                 </div>
               </motion.div>

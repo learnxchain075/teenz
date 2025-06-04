@@ -373,7 +373,7 @@ const ProductsPage = () => {
           title={"Create New Product"}
         >
           <div className="p-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Create New Product</h2>
+            {/* <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Create New Product</h2> */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div className="col-span-1 sm:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>

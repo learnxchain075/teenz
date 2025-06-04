@@ -262,19 +262,67 @@ export default function CheckoutPage() {
       case 'payment':
         try {
           const loadingToastId = 'payment-processing';
-          const totalAmount = calculateTotal(); // Get amount in rupees
+          const totalAmount = calculateTotal();
           
           toast.loading('Processing your payment...', { id: loadingToastId });
 
-          console.log('Initiating payment with amount:', totalAmount); // Debug log
+          // Format cart items for the API
+          const cartItems = directBuyProduct ? [
+            {
+              productId: directBuyProduct.product.id,
+              quantity: directBuyProduct.quantity,
+              price: directBuyProduct.product.price
+            }
+          ] : getSelectedItems().map(item => ({
+            productId: item.product.id,
+            quantity: item.quantity,
+            price: item.product.price
+          }));
+
+          // Create address if it doesn't exist or has changed
+          let addressId = user.Address?.[0]?.id;
+          
+          // Check if address details have changed
+          const hasAddressChanged = user.Address?.[0] && (
+            user.Address[0].street !== shippingDetails.address ||
+            user.Address[0].city !== shippingDetails.city ||
+            user.Address[0].zipCode !== shippingDetails.postalCode
+          );
+
+          if (!addressId || hasAddressChanged) {
+            const addressResponse = await fetch('http://localhost:5000/api/v1/address', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+              },
+              body: JSON.stringify({
+                userId: user.id,
+                street: shippingDetails.address,
+                city: shippingDetails.city,
+                state: 'Default State',
+                zipCode: shippingDetails.postalCode,
+                country: 'Default Country'
+              })
+            });
+
+            if (!addressResponse.ok) {
+              const errorData = await addressResponse.json();
+              throw new Error(errorData.error || 'Failed to save address');
+            }
+
+            const addressData = await addressResponse.json();
+            addressId = addressData.address.id;
+          }
 
           const result = await initiatePayment({
-            amount: totalAmount, // Amount in rupees
+            amount: totalAmount,
             userId: user.id,
             name: user.name || 'Customer',
             email: user.email || '',
-            description: `Order for ${getSelectedItems().length} item(s) - Total: ${formatCurrency(totalAmount)}`,
-            items: getSelectedItems(),
+            description: `Order for ${cartItems.length} item(s) - Total: ${formatCurrency(totalAmount)}`,
+            cartItems: cartItems,
+            addressId: addressId,
             total: totalAmount
           });
 

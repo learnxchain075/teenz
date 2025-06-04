@@ -34,6 +34,7 @@ export default function ProductDetail() {
   const [isZoomed, setIsZoomed] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [reviewCount, setReviewCount] = useState(0);
   const addToCart = useCartStore((state) => state.addItem);
 
   useEffect(() => {
@@ -133,6 +134,11 @@ export default function ProductDetail() {
     setCurrentImageIndex((prev) =>
       prev === product.images.length - 1 ? 0 : prev + 1
     );
+  };
+
+  // Function to update review count
+  const updateReviewCount = (count: number) => {
+    setReviewCount(count);
   };
 
   if (isLoading) {
@@ -242,7 +248,7 @@ export default function ProductDetail() {
                   ))}
                 </div>
                 <span className="text-gray-600 dark:text-gray-400">
-                  ({product.review_count || 0} reviews)
+                  ({reviewCount} reviews)
                 </span>
               </div>
 
@@ -351,16 +357,26 @@ export default function ProductDetail() {
             <h2 className="text-2xl font-semibold mb-8">Customer Reviews</h2>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2">
-                <ReviewList productId={id as string} />
+                <ReviewList 
+                  productId={id as string} 
+                  onReviewCountChange={updateReviewCount}
+                />
               </div>
               <div>
                 <div className="bg-white dark:bg-card rounded-xl shadow-sm p-6">
                   <h3 className="text-lg font-semibold mb-4">Write a Review</h3>
                   <ReviewForm 
                     productId={id as string} 
-                    onSuccess={() => {
-                      // Refresh the reviews list
-                      window.location.reload();
+                    onSuccess={(e) => {
+                      if (e) e.preventDefault();
+                      // Find the ReviewList component and call its fetchReviews method
+                      const reviewListElement = document.querySelector('[data-testid="review-list"]');
+                      if (reviewListElement) {
+                        const reviewList = reviewListElement as any;
+                        if (reviewList.fetchReviews) {
+                          reviewList.fetchReviews();
+                        }
+                      }
                     }} 
                   />
                 </div>

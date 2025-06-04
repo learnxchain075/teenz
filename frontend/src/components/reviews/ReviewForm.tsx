@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 
 interface ReviewFormProps {
   productId: string;
-  onSuccess?: () => void;
+  onSuccess?: (e?: React.SyntheticEvent) => void;
 }
 
 export default function ReviewForm({ productId, onSuccess }: ReviewFormProps) {
@@ -65,7 +65,7 @@ export default function ReviewForm({ productId, onSuccess }: ReviewFormProps) {
       toast.success('Review submitted successfully! It will be visible after approval.');
       setRating(0);
       setComment('');
-      onSuccess?.();
+      onSuccess?.(e);
     } catch (error: any) {
       console.error('Error submitting review:', error);
       toast.error(error.message || 'Failed to submit review');

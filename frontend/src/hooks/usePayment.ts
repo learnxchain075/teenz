@@ -8,7 +8,12 @@ interface PaymentDetails {
   name: string;
   email: string;
   description: string;
-  items?: any[];
+  cartItems: Array<{
+    productId: string;
+    quantity: number;
+    price: number;
+  }>;
+  addressId: number;
   total?: number;
   couponCode?: string;
   contact?: string;
@@ -60,6 +65,8 @@ export const usePayment = () => {
       const payload = {
         amount: Math.round(parseFloat(details.amount.toString())),
         userId: Number(details.userId),
+        cartItems: details.cartItems,
+        addressId: details.addressId,
         couponCode: details.couponCode
       };
 

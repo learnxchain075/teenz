@@ -17,12 +17,30 @@ interface OrderItem {
 
 interface Order {
   id: string;
-  orderName: string;
+  orderName: string | null;
   customerName: string;
   date: string;
   total: number;
   status: string;
-  OrderItem: OrderItem[];
+  items?: Array<{
+    id: string;
+    name: string;
+    quantity: number;
+    price: number;
+    productId: string;
+    image?: string;
+  }>;
+  OrderItem?: Array<{
+    id: string;
+    name: string;
+    quantity: number;
+    price: number;
+    productId: string;
+    product?: {
+      name: string;
+      images?: Array<{ url: string }>;
+    };
+  }>;
   userId: string;
   shippingAddress?: {
     street: string;
@@ -42,6 +60,17 @@ interface OrderDetailsModalProps {
 
 export default function OrderDetailsModal({ isOpen, onClose, order }: OrderDetailsModalProps) {
   if (!order) return null;
+
+  const orderItems = order.items || order.OrderItem || [];
+  const getItemImage = (item: any) => {
+    if (item.image) return item.image;
+    if (item.product?.images?.[0]?.url) return item.product.images[0].url;
+    return null;
+  };
+
+  const getItemName = (item: any) => {
+    return item.name || item.product?.name || 'Product';
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -139,14 +168,14 @@ export default function OrderDetailsModal({ isOpen, onClose, order }: OrderDetai
                   <div>
                     <h4 className="font-medium mb-4">Order Items</h4>
                     <div className="space-y-4">
-                      {order.OrderItem?.map((item) => (
+                      {orderItems.map((item) => (
                         <div key={item.id} className="flex items-center justify-between">
                           <div className="flex items-center gap-4">
                             <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-700">
-                              {item.product?.images?.[0]?.url ? (
+                              {getItemImage(item) ? (
                                 <img
-                                  src={item.product.images[0].url}
-                                  alt={item.product.name}
+                                  src={getItemImage(item)}
+                                  alt={getItemName(item)}
                                   className="h-full w-full object-cover"
                                 />
                               ) : (
@@ -156,7 +185,7 @@ export default function OrderDetailsModal({ isOpen, onClose, order }: OrderDetai
                               )}
                             </div>
                             <div>
-                              <p className="font-medium">{item.product?.name || 'Product'}</p>
+                              <p className="font-medium">{getItemName(item)}</p>
                               <p className="text-sm text-gray-500">
                                 {formatCurrency(item.price)} × {item.quantity}
                               </p>

@@ -1,15 +1,19 @@
 import { Request, Response } from "express";
 import { prisma } from "../../db/prisma";
 import { razorpay } from "../../config/razorpay";
+import { Prisma } from "@prisma/client";
 
 export const createRazorpayOrder = async (req: Request, res: Response): Promise<any> => {
   try {
     const { userId, amount, couponCode, cartItems, addressId } = req.body;
     console.log("📥 Received payment order request:", req.body);
 
-
     if (!Array.isArray(cartItems) || cartItems.length === 0) {
       return res.status(400).json({ error: "Cart items are required" });
+    }
+
+    if (!addressId) {
+      return res.status(400).json({ error: "Shipping address is required" });
     }
 
     let finalAmount = amount;
@@ -41,10 +45,10 @@ export const createRazorpayOrder = async (req: Request, res: Response): Promise<
     const dbOrder = await prisma.order.create({
       data: {
         userId,
+        addressId,
         total: finalAmount,
         couponCode,
         razorpayOrderId: razorpayOrder.id,
-        addressId,
         OrderItem: {
           create: cartItems.map((item: any) => ({
             productId: item.productId,

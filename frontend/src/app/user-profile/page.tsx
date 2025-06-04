@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Pencil, LogOut, Mail, Calendar, UserRoundCheck } from 'lucide-react';
+import { Pencil, LogOut, Mail, Calendar, UserRoundCheck, Package } from 'lucide-react';
 import clsx from 'clsx';
 import Button from '@/components/ui/Button';
 import Link from 'next/link';
@@ -159,7 +159,7 @@ export default function UserProfile() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto p-6">
+    <div className="max-w-5xl mx-auto p-6 overflow-y-auto max-h-[calc(100vh-80px)]">
       <div className="flex flex-col md:flex-row gap-6 bg-white dark:bg-gray-900 rounded-xl shadow-xl p-6">
         <div className="flex-shrink-0 self-center">
           <Image
@@ -231,34 +231,37 @@ export default function UserProfile() {
             {user.Order.slice(0, 3).map((order: any) => (
               <div key={order.id} className="border dark:border-gray-700 rounded-lg p-4">
                 <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h4 className="font-medium text-lg">
-                      {order.orderName ? order.orderName : `Order #${order.id.slice(-6)}`}
-                    </h4>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {new Date(order.createdAt).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })}
-                    </p>
+                  <div className="flex items-center gap-4">
+                    <Package className="w-6 h-6 text-primary-600 dark:text-primary-400" />
+                    <div>
+                      <h3 className="font-semibold">
+                        {order.orderName ? order.orderName : `Order #${order.id.slice(-6)}`}
+                      </h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Placed on {new Date(order.date).toLocaleDateString()}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex flex-col items-end gap-2">
-                    <span className={clsx(
-                      "px-3 py-1 rounded-full text-xs font-medium",
-                      order.status === 'ACTIVE' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
-                      order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' :
-                      order.status === 'CANCELLED' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' :
-                      'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
-                    )}>
+                  <div>
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      order.status === 'ACTIVE'
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                        : order.status === 'INACTIVE'
+                        ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                        : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                    }`}>
                       {order.status}
                     </span>
-                    <span className={clsx(
-                      "text-sm",
-                      order.isPaid ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-                    )}>
-                      {order.isPaid ? 'Paid' : 'Payment Pending'}
-                    </span>
+                    <div className="mt-2 text-right">
+                      <span className={clsx(
+                        "text-sm",
+                        order.status === 'INACTIVE' ? 'text-red-600 dark:text-red-400' : 
+                        order.isPaid ? 'text-green-600 dark:text-green-400' : 'text-yellow-600 dark:text-yellow-400'
+                      )}>
+                        {order.status === 'INACTIVE' ? 'Cancelled' : 
+                         order.isPaid ? 'Paid' : 'Payment Pending'}
+                      </span>
+                    </div>
                   </div>
                 </div>
                 
@@ -272,7 +275,6 @@ export default function UserProfile() {
                         Coupon Applied: <span className="font-medium text-primary-600">{order.couponCode}</span>
                       </p>
                     )}
-                    {/* Display order items if available */}
                     {order.OrderItem && order.OrderItem.length > 0 && (
                       <p className="text-sm text-gray-600 dark:text-gray-400">
                         Items: {order.OrderItem.map((item: any) => item.product?.name || 'Product').join(', ')}
