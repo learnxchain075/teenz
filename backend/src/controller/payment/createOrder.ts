@@ -4,7 +4,7 @@ import { razorpay } from "../../config/razorpay";
 
 export const createRazorpayOrder = async (req: Request, res: Response): Promise<any> => {
   try {
-    const { userId, amount, couponCode, cartItems } = req.body;
+    const { userId, amount, couponCode, cartItems, addressId } = req.body;
     console.log("📥 Received payment order request:", req.body);
 
 
@@ -44,6 +44,7 @@ export const createRazorpayOrder = async (req: Request, res: Response): Promise<
         total: finalAmount,
         couponCode,
         razorpayOrderId: razorpayOrder.id,
+        addressId,
         OrderItem: {
           create: cartItems.map((item: any) => ({
             productId: item.productId,
