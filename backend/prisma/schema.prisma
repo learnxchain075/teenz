@@ -95,29 +95,7 @@ model ProductImage {
   createdAt DateTime @default(now())
 }
 
-model ProductReview {
-  id        String              @id @default(cuid())
-  productId String
-  userId    Int
-  rating    Int
-  comment   String?
-  createdAt DateTime            @default(now())
-  status    ProductReviewStatus @default(PENDING)
 
-  product Product @relation(fields: [productId], references: [id])
-  user    User    @relation(fields: [userId], references: [id])
-}
-
-model OrderItem {
-  id        String   @id @default(cuid())
-  orderId   String
-  productId String
-  quantity  Int
-  price     Float
-
-  order   Order   @relation(fields: [orderId], references: [id])
-  product Product @relation(fields: [productId], references: [id])
-}
 
 model Category {
   id          String    @id @default(cuid())
@@ -167,7 +145,7 @@ model coupon {
 
 model Order {
   id              String   @id @default(cuid())
-   orderName       String?  @unique // ✅ Unique order name for easier tracking
+  orderName       String?  @unique // ✅ Unique order name for easier tracking
   userId          Int
   total           Float
   status          Status   @default(ACTIVE)
@@ -182,7 +160,29 @@ model Order {
 
   OrderItem OrderItem[]
 }
+model ProductReview {
+  id        String              @id @default(cuid())
+  productId String
+  userId    Int
+  rating    Int
+  comment   String?
+  createdAt DateTime            @default(now())
+  status    ProductReviewStatus @default(PENDING)
 
+  product Product @relation(fields: [productId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+}
+
+model OrderItem {
+  id        String          @id @default(cuid())
+  orderId   String
+  productId String
+  quantity  Int
+  price     Float
+  status    OrderItemStatus @default(PREPARING) // ✅ NEW
+  order     Order           @relation(fields: [orderId], references: [id])
+  product   Product         @relation(fields: [productId], references: [id])
+}
 model payment {
   id        String   @id @default(cuid())
   orderId   String
@@ -202,7 +202,7 @@ model EmailSubscriber {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   verified  Boolean  @default(false)
-  source    String? 
+  source    String?
 }
 
 model ContactMessage {
@@ -256,4 +256,8 @@ enum ProductReviewStatus {
   REJECTED
 }
 
-
+enum OrderItemStatus {
+  PREPARING
+  IN_SHIPPING
+  DELIVERED
+}

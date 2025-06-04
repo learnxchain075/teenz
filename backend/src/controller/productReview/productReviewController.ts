@@ -5,44 +5,59 @@ import { prisma } from "../../db/prisma";
 export const createProductReview = async (req: Request, res: Response): Promise<void> => {
   try {
     const { productId, userId, rating, comment } = req.body;
-console.log("object", req.body);
-    if (!productId || !userId || !rating) {
-      res.status(400).json({ error: "Product ID, User ID, and Rating are required." });
+
+    if (!productId || !userId || typeof rating !== 'number' || rating < 1 || rating > 5) {
+      res.status(400).json({ success: false, error: "Product ID, User ID, and valid Rating (1–5) are required." });
       return;
     }
 
-    // Check if user purchased the product (must exist in a paid order)
+    // Check if user has purchased the product
     const hasPurchased = await prisma.order.findFirst({
       where: {
-        userId,
+        userId: Number(userId),
         isPaid: true,
         status: 'ACTIVE',
         OrderItem: {
           some: { productId },
-        }
+        },
       },
     });
-// console.log("object", hasPurchased);
+
     if (!hasPurchased) {
-      res.status(403).json({ error: "You can only review products you've purchased." });
+      res.status(403).json({ success: false, error: "You can only review products you've purchased." });
+      return;
+    }
+
+    // Check if user already reviewed this product
+    const alreadyReviewed = await prisma.productReview.findFirst({
+      where: {
+        productId,
+        userId: Number(userId),
+      },
+    });
+
+    if (alreadyReviewed) {
+      res.status(409).json({ success: false, error: "You have already reviewed this product." });
       return;
     }
 
     const review = await prisma.productReview.create({
       data: {
         productId,
-        userId,
+        userId: Number(userId),
         rating,
         comment,
         status: "PENDING",
       },
     });
 
-    res.status(201).json({ message: "Review submitted for approval", review });
+    res.status(201).json({ success: true, message: "Review submitted for approval", review });
   } catch (error) {
-    res.status(500).json({ error: "Failed to create review", details: error instanceof Error ? error.message : String(error) });
+    console.error("[Create Review]", error);
+    res.status(500).json({ success: false, error: "Failed to create review", details: error instanceof Error ? error.message : String(error) });
   }
 };
+
 
 // ✅ Get all approved reviews for a product
 export const getProductReviews = async (req: Request, res: Response): Promise<void> => {

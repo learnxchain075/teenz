@@ -13,10 +13,10 @@ interface AccountLayoutProps {
 const navigation = [
   { name: 'Profile', href: '/account/profile', icon: User },
   { name: 'Orders', href: '/account/orders', icon: Package },
-  { name: 'Wishlist', href: '/wishlist', icon: Heart },
-  { name: 'Payment Methods', href: '/account/payment', icon: CreditCard },
-  { name: 'Notifications', href: '/account/notifications', icon: Bell },
-  { name: 'Settings', href: '/account/settings', icon: Settings },
+  // { name: 'Wishlist', href: '/wishlist', icon: Heart },
+  // { name: 'Payment Methods', href: '/account/payment', icon: CreditCard },
+  // { name: 'Notifications', href: '/account/notifications', icon: Bell },
+  // { name: 'Settings', href: '/account/settings', icon: Settings },
 ];
 
 export default function AccountLayout({ children }: AccountLayoutProps) {

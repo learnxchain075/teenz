@@ -4,7 +4,13 @@ import { razorpay } from "../../config/razorpay";
 
 export const createRazorpayOrder = async (req: Request, res: Response): Promise<any> => {
   try {
-    const { userId, amount, couponCode } = req.body;
+    const { userId, amount, couponCode, cartItems } = req.body;
+    console.log("📥 Received payment order request:", req.body);
+
+
+    if (!Array.isArray(cartItems) || cartItems.length === 0) {
+      return res.status(400).json({ error: "Cart items are required" });
+    }
 
     let finalAmount = amount;
 
@@ -31,13 +37,23 @@ export const createRazorpayOrder = async (req: Request, res: Response): Promise<
       payment_capture: true,
     });
 
-    // Store in DB
+    // Create order with items
     const dbOrder = await prisma.order.create({
       data: {
         userId,
         total: finalAmount,
         couponCode,
         razorpayOrderId: razorpayOrder.id,
+        OrderItem: {
+          create: cartItems.map((item: any) => ({
+            productId: item.productId,
+            quantity: item.quantity,
+            price: item.price,
+          })),
+        },
+      },
+      include: {
+        OrderItem: true,
       },
     });
 
