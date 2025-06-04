@@ -49,11 +49,26 @@ export const getCategories = async (_req: Request, res: Response): Promise<any> 
   try {
     const categories = await prisma.category.findMany({
       include: {
-        products: true,
+        products: {
+          select: {
+            id: true,
+          }
+        },
       },
     });
 
-    return res.json(categories);
+    // Transform the response to include product count
+    const transformedCategories = categories.map(category => ({
+      id: category.id,
+      name: category.name,
+      description: category.description,
+      imageUrl: category.imageUrl,
+      status: category.status,
+      productCount: category.products.length,
+    }));
+
+   // console.log('Categories response:', transformedCategories);
+    return res.json(transformedCategories);
   } catch (error) {
     console.error("[getCategories]", error);
     return res.status(500).json({ error: "Failed to fetch categories" });
@@ -70,7 +85,12 @@ export const getCategoryById = async (req: Request, res: Response): Promise<any>
     const category = await prisma.category.findUnique({
       where: { id },
       include: {
-        products: true,
+        products: {
+          include: {
+            images: true,
+            productTag: true
+          }
+        }
       },
     });
 
@@ -91,22 +111,43 @@ export const getCategoryById = async (req: Request, res: Response): Promise<any>
 export const updateCategory = async (req: Request, res: Response): Promise<any> => {
   try {
     const { id } = req.params;
-    const { name, description, imageUrl, status } = req.body;
+    const { name, description, status } = req.body;
+    const imageFile = req.file;
+
+    let imageUrl;
+    if (imageFile && imageFile.buffer) {
+      const uploadResult = await uploadFile(imageFile.buffer, "category_images", "image");
+      imageUrl = uploadResult.url;
+    }
 
     const updatedCategory = await prisma.category.update({
       where: { id },
       data: {
         name,
         description,
-        imageUrl,
         status,
+        ...(imageUrl && { imageUrl })
       },
       include: {
-        products: true,
+        products: {
+          select: {
+            id: true,
+          }
+        },
       },
     });
 
-    return res.json(updatedCategory);
+    // Transform the response to include product count
+    const transformedCategory = {
+      id: updatedCategory.id,
+      name: updatedCategory.name,
+      description: updatedCategory.description,
+      imageUrl: updatedCategory.imageUrl,
+      status: updatedCategory.status,
+      productCount: updatedCategory.products.length,
+    };
+
+    return res.json(transformedCategory);
   } catch (error) {
     console.error("[updateCategory]", error);
     return res.status(500).json({ error: "Failed to update category" });

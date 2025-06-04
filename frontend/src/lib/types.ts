@@ -25,6 +25,7 @@ export interface Product {
   images?: ProductImage[];
   imageUrl?: string;
   ingredients?: ProductIngredient[];
+  productTag?: ProductTag[];
 }
 
 export interface ProductImage {
@@ -37,6 +38,11 @@ export interface ProductImage {
 export interface ProductIngredient {
   id: string;
   product_id: string;
+  name: string;
+}
+
+export interface ProductTag {
+  id: string;
   name: string;
 }
 

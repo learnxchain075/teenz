@@ -5,35 +5,18 @@ const nextConfig = {
 
   images: {
     remotePatterns: [
-     
       {
-        protocol: 'https',
-        hostname: 'images.pexels.com',
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '5000',
+        pathname: '/uploads/**',
       },
       {
         protocol: 'https',
-        hostname: 'images.unsplash.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'media.istockphoto.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'res.cloudinary.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'cdn.pixabay.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'collection.cloudinary.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'drive.google.com',
-      },
+        hostname: '**',
+        port: '',
+        pathname: '/**',
+      }
     ],
   },
 

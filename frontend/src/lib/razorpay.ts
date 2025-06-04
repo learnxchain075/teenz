@@ -18,60 +18,46 @@ export const loadRazorpayScript = () => {
   });
 };
 
-export const initializeRazorpayPayment = async ({
-  orderId,
-  amount,
-  currency = 'INR',
-  name = 'Teenz',
-  description = 'Purchase',
-  image = '/logo.png',
-  prefillEmail = '',
-  prefillContact = '',
-  theme = { color: '#6366f1' }
-}: {
+interface RazorpayOptions {
   orderId: string;
   amount: number;
-  currency?: string;
-  name?: string;
-  description?: string;
-  image?: string;
+  name: string;
+  description: string;
   prefillEmail?: string;
   prefillContact?: string;
-  theme?: { color: string };
-}) => {
+}
+
+export const initializeRazorpayPayment = (options: RazorpayOptions): Promise<any> => {
   return new Promise((resolve) => {
-    const options = {
+    // Convert amount to paise for Razorpay
+    const amountInPaise = Math.round(parseFloat(options.amount.toString()) * 100);
+    
+    const rzp = new (window as any).Razorpay({
       key: 'rzp_test_EJh0TkmUgkZNyG',
-      amount: amount * 100,
-      currency,
-      name,
-      description,
-      image,
-      order_id: orderId,
+      amount: amountInPaise, // Amount in paise
+      currency: 'INR',
+      name: options.name,
+      description: options.description,
+      order_id: options.orderId,
       handler: function (response: any) {
-        resolve({ success: true, ...response });
+        resolve({
+          success: true,
+          ...response,
+        });
+      },
+      modal: {
+        ondismiss: function () {
+          resolve({ success: false, cancelled: true });
+        },
       },
       prefill: {
-        email: prefillEmail,
-        contact: prefillContact,
+        email: options.prefillEmail,
+        contact: options.prefillContact,
       },
-      theme,
-      modal: {
-        ondismiss: function() {
-          resolve({ success: false, cancelled: true });
-        }
-      }
-    };
-
-    const paymentObject = new window.Razorpay(options);
-    
-    paymentObject.on('payment.failed', function (resp: any) {
-      resolve({ 
-        success: false, 
-        error: { description: resp.error.description || 'Payment failed' }
-      });
+      theme: {
+        color: '#6366f1',
+      },
     });
-
-    paymentObject.open();
+    rzp.open();
   });
 }; 

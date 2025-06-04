@@ -138,6 +138,8 @@ export default function CollectionsPage() {
     }
 
     setIsLoading(true);
+    const loadingToast = toast.loading('Updating collection...');
+
     try {
       const formData = new FormData();
       formData.append('name', collectionData.name.trim());
@@ -150,7 +152,7 @@ export default function CollectionsPage() {
       const response = await fetch(
         `http://localhost:5000/api/v1/collections/${selectedCollection.id}`,
         {
-        method: 'PUT',
+          method: 'PUT',
           body: formData
         }
       );
@@ -161,17 +163,31 @@ export default function CollectionsPage() {
       }
 
       const updatedCollection = await response.json();
-      setCollections((prev) =>
-        prev.map((col) =>
-          col.id === selectedCollection.id ? updatedCollection : col
-        )
-      );
+      
+      // Update the collections list with the new data
+      setCollections(collections.map(col => 
+        col.id === selectedCollection.id 
+          ? { 
+              ...col, 
+              ...updatedCollection,
+              // Preserve the image URL if no new image was uploaded
+              imageUrl: collectionData.image ? updatedCollection.imageUrl : col.imageUrl
+            } 
+          : col
+      ));
+
+      // Reset form and close modal
       setCollectionData({ name: '', description: '', image: null, status: 'ACTIVE' });
       setSelectedCollection(null);
       setIsAddModalOpen(false);
+      setFormErrors({});
+      
+      // Show success message
+      toast.dismiss(loadingToast);
       toast.success('Collection updated successfully');
     } catch (error) {
       console.error('Error updating collection:', error);
+      toast.dismiss(loadingToast);
       toast.error(error instanceof Error ? error.message : 'Failed to update collection');
     } finally {
       setIsLoading(false);

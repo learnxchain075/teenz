@@ -15,7 +15,10 @@ interface OrderItem {
   quantity: number;
   price: number;
   productId: string;
-  image?: string;
+  product?: {
+    name: string;
+    images?: Array<{ url: string }>;
+  };
 }
 
 interface Order {
@@ -24,7 +27,7 @@ interface Order {
   date: string;
   total: number;
   status: string;
-  items: OrderItem[];
+  OrderItem: OrderItem[];
 }
 
 interface ApiResponse {
@@ -53,14 +56,33 @@ export default function OrdersPage() {
         return;
       }
 
-      const { data } = await axios.get<ApiResponse>('http://localhost:5000/api/v1/orders/my-orders', {
+      // Get user data from localStorage
+      const userData = localStorage.getItem('user');
+      if (!userData) {
+        toast.error('Please login to view your orders');
+        return;
+      }
+
+      const user = JSON.parse(userData);
+      const userId = user.id;
+
+      const { data } = await axios.get<ApiResponse>(`http://localhost:5000/api/v1/orders/user/${userId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
+      console.log('API Response:', data);
+
       if (data.success) {
-        setOrders(data.orders);
+        // Transform the data to match our frontend structure and ensure OrderItem is always an array
+        const transformedOrders = data.orders.map(order => ({
+          ...order,
+          OrderItem: order.OrderItem || [], // Ensure OrderItem is always an array
+          status: order.status?.toLowerCase() || 'pending'
+        }));
+        console.log('Transformed Orders:', transformedOrders);
+        setOrders(transformedOrders as Order[]);
       } else {
         throw new Error(data.message || 'Failed to fetch orders');
       }
@@ -88,17 +110,29 @@ export default function OrdersPage() {
     }
   };
 
-  const filteredOrders = orders.filter(order => {
+  // Safe filtering of orders
+  const filteredOrders = orders?.filter(order => {
+    if (!order) return false;
+    
     const matchesSearch = 
-      order.orderName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.id.toLowerCase().includes(searchQuery.toLowerCase());
+      (order.orderName?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+      (order.id?.toLowerCase() || '').includes(searchQuery.toLowerCase());
     
     const matchesStatus = 
       selectedStatus === 'all' || 
-      order.status.toLowerCase() === selectedStatus.toLowerCase();
+      (order.status?.toLowerCase() || '') === selectedStatus.toLowerCase();
 
     return matchesSearch && matchesStatus;
-  });
+  }) || [];
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount).replace('₹', '₹ ');
+  };
 
   if (isLoading) {
     return (
@@ -173,7 +207,9 @@ export default function OrdersPage() {
                     <div className="flex items-center gap-4">
                       <Package className="w-6 h-6 text-primary-600 dark:text-primary-400" />
                       <div>
-                        <h3 className="font-semibold">Order {order.orderName}</h3>
+                        <h3 className="font-semibold">
+                          {order.orderName || `Order #${order.id.slice(-6)}`}
+                        </h3>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
                           Placed on {new Date(order.date).toLocaleDateString()}
                         </p>
@@ -195,38 +231,48 @@ export default function OrdersPage() {
                   </div>
 
                   <div className="border-t border-gray-200 dark:border-gray-800 pt-4">
-                    {order.items.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-center justify-between py-2"
-                      >
-                        <div className="flex items-center gap-4">
-                          {item.image && (
-                            <div className="relative w-12 h-12 rounded-lg overflow-hidden">
-                              <img
-                                src={item.image}
-                                alt={item.name}
-                                className="object-cover w-full h-full"
-                              />
+                    {order.OrderItem && order.OrderItem.length > 0 ? (
+                      order.OrderItem.map((item) => (
+                        <div
+                          key={item.id}
+                          className="flex items-center justify-between py-2"
+                        >
+                          <div className="flex items-center gap-4">
+                            {item.product?.images?.[0]?.url ? (
+                              <div className="relative w-12 h-12 rounded-lg overflow-hidden">
+                                <img
+                                  src={item.product.images[0].url}
+                                  alt={item.product.name}
+                                  className="object-cover w-full h-full"
+                                />
+                              </div>
+                            ) : (
+                              <div className="w-12 h-12 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                                <Package className="w-6 h-6 text-gray-400" />
+                              </div>
+                            )}
+                            <div>
+                              <p className="font-medium">{item.product?.name || 'Product'}</p>
+                              <p className="text-sm text-gray-500 dark:text-gray-400">
+                                Quantity: {item.quantity}
+                              </p>
                             </div>
-                          )}
-                          <div>
-                            <p className="font-medium">{item.name}</p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                              Quantity: {item.quantity}
-                            </p>
                           </div>
+                          <p className="font-medium">
+                            {formatCurrency(item.price * item.quantity)}
+                          </p>
                         </div>
-                        <p className="font-medium">
-                          ${(item.price * item.quantity).toFixed(2)}
-                        </p>
+                      ))
+                    ) : (
+                      <div className="text-center py-4 text-gray-500 dark:text-gray-400">
+                        No items in this order
                       </div>
-                    ))}
+                    )}
                   </div>
 
                   <div className="border-t border-gray-200 dark:border-gray-800 mt-4 pt-4 flex items-center justify-between">
                     <div className="text-lg font-semibold">
-                      Total: ${order.total.toFixed(2)}
+                      Total: {formatCurrency(order.total)}
                     </div>
                     <div className="flex gap-4">
                       {order.status !== 'cancelled' && order.status !== 'delivered' && (

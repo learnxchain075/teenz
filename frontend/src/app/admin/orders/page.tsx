@@ -5,10 +5,23 @@ import { motion } from 'framer-motion';
 import { Package, Search, Filter, Eye, Truck, XCircle, InboxIcon } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import AdminTable from '@/components/admin/Table';
+import OrderDetailsModal from '@/components/admin/OrderDetailsModal';
 import axios from 'axios';
 import toast, { Toaster } from 'react-hot-toast';
 
 // Define TypeScript interfaces
+interface OrderItem {
+  id: string;
+  name: string;
+  quantity: number;
+  price: number;
+  productId: string;
+  product?: {
+    name: string;
+    images?: Array<{ url: string }>;
+  };
+}
+
 interface Order {
   id: string;
   orderName: string | null;
@@ -17,12 +30,23 @@ interface Order {
   date: string;
   total: number;
   status: OrderStatus;
+  OrderItem: OrderItem[];
+  userId: string;
+  shippingAddress?: {
+    street: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+  };
+  paymentStatus?: string;
 }
 
 interface ApiResponse<T> {
   success: boolean;
   error?: string;
-  orders?: T;
+  orders?: T[];
+  order?: T;
 }
 
 enum OrderStatus {
@@ -39,6 +63,8 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Format date helper function
   const formatDate = (dateString: string) => {
@@ -62,26 +88,19 @@ export default function OrdersPage() {
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get<ApiResponse<Order[]>>('http://localhost:5000/api/v1/orders/all');
-      
-      // console.group('Orders API Response');
-      // console.log('Full API Response:', response.data);
-      // console.log('Orders Data:', response.data.orders);
-      // console.log('Success Status:', response.data.success);
-      if (response.data.orders) {
-        console.table(response.data.orders.map(order => ({
-          id: order.id,
-          orderName: order.orderName,
-          total: order.total,
-          status: order.status,
-          items: order.itemCount,
-          customerName: order.customerName,
-          date: order.date
-        })));
-      }
-      console.groupEnd();
+      const response = await axios.get<ApiResponse<Order>>('http://localhost:5000/api/v1/orders/all');
       
       if (response.data.success && response.data.orders) {
+        // console.table(response.data.orders.map(order => ({
+        //   id: order.id,
+        //   orderName: order.orderName,
+        //   total: order.total,
+        //   status: order.status,
+        //   items: order.itemCount,
+        //   customerName: order.customerName,
+        //   date: order.date
+        // })));
+        
         setOrders(response.data.orders);
       } else {
         throw new Error(response.data.error || 'Failed to fetch orders');
@@ -115,18 +134,18 @@ export default function OrdersPage() {
     const matchesStatus = selectedStatus === 'all' || order.status === selectedStatus;
 
     // Log filtered order details when search or status filter is active
-    if (searchQuery || selectedStatus !== 'all') {
-      console.group(`Order Filter Details - ${order.id}`);
-      console.log('Order:', {
-        id: order.id,
-        orderName: order.orderName,
-        customerName: order.customerName,
-        status: order.status
-      });
-      console.log('Matches Search:', matchesSearch);
-      console.log('Matches Status:', matchesStatus);
-      console.groupEnd();
-    }
+    // if (searchQuery || selectedStatus !== 'all') {
+    //   console.group(`Order Filter Details - ${order.id}`);
+    //   console.log('Order:', {
+    //     id: order.id,
+    //     orderName: order.orderName,
+    //     customerName: order.customerName,
+    //     status: order.status
+    //   });
+    //   console.log('Matches Search:', matchesSearch);
+    //   console.log('Matches Status:', matchesStatus);
+    //   console.groupEnd();
+    // }
 
     return matchesSearch && matchesStatus;
   });
@@ -154,6 +173,24 @@ export default function OrdersPage() {
       
       // Optionally refresh orders to ensure consistency
       fetchOrders();
+    }
+  };
+
+  // Handle view order details
+  const handleViewOrder = async (orderId: string) => {
+    try {
+      const response = await axios.get<ApiResponse<Order>>(`http://localhost:5000/api/v1/orders/${orderId}`);
+      console.log('Order details:', response.data);
+      
+      if (response.data.success && response.data.order) {
+        setSelectedOrder(response.data.order);
+        setIsModalOpen(true);
+      } else {
+        throw new Error(response.data.error || 'Failed to fetch order details');
+      }
+    } catch (err: any) {
+      console.error('Error fetching order details:', err);
+      toast.error('Failed to fetch order details');
     }
   };
 
@@ -334,6 +371,7 @@ export default function OrdersPage() {
                         variant="ghost"
                         size="sm"
                         title="View Details"
+                        onClick={() => handleViewOrder(value)}
                       >
                         <Eye className="w-4 h-4" />
                       </Button>
@@ -365,6 +403,15 @@ export default function OrdersPage() {
           )}
         </div>
       </div>
+
+      <OrderDetailsModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedOrder(null);
+        }}
+        order={selectedOrder}
+      />
     </div>
   );
 }

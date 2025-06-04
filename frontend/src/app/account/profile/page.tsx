@@ -1,17 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { Camera, Mail, Phone, MapPin, Building, Globe, Save } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import AccountLayout from '@/components/account/Layout';
+import { useRouter } from 'next/navigation';
+import { toast } from 'react-hot-toast';
 
 interface UserProfile {
+  id: number;
   name: string;
   email: string;
   role: string;
-  avatar: string;
+  profilePicture: string | null;
   phone: string;
   address: string;
   company: string;
@@ -20,25 +23,104 @@ interface UserProfile {
 }
 
 export default function ProfilePage() {
-  const [profile, setProfile] = useState<UserProfile>({
-    name: 'John Doe',
-    email: 'john@example.com',
-    role: 'Customer',
-    avatar: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2',
-    phone: '+1 (555) 123-4567',
-    address: '123 Customer Street, City, Country',
-    company: 'Company Name',
-    website: 'www.example.com',
-    bio: 'A passionate customer who loves quality products.',
-  });
-
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [editedProfile, setEditedProfile] = useState(profile);
+  const [editedProfile, setEditedProfile] = useState<UserProfile | null>(null);
+  const router = useRouter();
 
-  const handleSave = () => {
-    setProfile(editedProfile);
-    setIsEditing(false);
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/auth/login');
+        return;
+      }
+
+      try {
+        const res = await fetch('http://localhost:5000/api/v1/user/me', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!res.ok) {
+          if (res.status === 401 || res.status === 403) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            router.push('/auth/login');
+            return;
+          }
+          throw new Error('Failed to fetch profile');
+        }
+
+        const data = await res.json();
+        // Transform API data to match our interface
+        const profileData: UserProfile = {
+          id: data.id,
+          name: data.name || 'N/A',
+          email: data.email || 'N/A',
+          role: data.role || 'N/A',
+          profilePicture: data.profilePicture,
+          phone: 'N/A',
+          address: data.Address?.[0] ? `${data.Address[0].street}, ${data.Address[0].city}, ${data.Address[0].state}, ${data.Address[0].zipCode}, ${data.Address[0].country}` : 'N/A',
+          company: 'N/A',
+          website: 'N/A',
+          bio: 'N/A'
+        };
+        setProfile(profileData);
+        setEditedProfile(profileData);
+      } catch (err) {
+        console.error('Failed to load profile:', err);
+        toast.error('Failed to load profile data');
+      }
+    };
+
+    fetchProfile();
+  }, [router]);
+
+  const handleSave = async () => {
+    if (!editedProfile) return;
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      router.push('/auth/login');
+      return;
+    }
+
+    try {
+      const res = await fetch(`http://localhost:5000/api/v1/user/profile`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: editedProfile.name,
+          email: editedProfile.email
+        }),
+      });
+
+      if (!res.ok) throw new Error('Failed to update profile');
+
+      const data = await res.json();
+      setProfile(prev => prev ? { ...prev, ...data } : null);
+      setIsEditing(false);
+      toast.success('Profile updated successfully');
+    } catch (err) {
+      console.error('Failed to update profile:', err);
+      toast.error('Failed to update profile');
+    }
   };
+
+  if (!profile) {
+    return (
+      <AccountLayout>
+        <div className="text-center py-10 text-gray-500">
+          Loading...
+        </div>
+      </AccountLayout>
+    );
+  }
 
   return (
     <AccountLayout>
@@ -53,7 +135,7 @@ export default function ProfilePage() {
             <div className="relative">
               <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white dark:border-gray-800">
                 <Image
-                  src={profile.avatar}
+                  src={profile.profilePicture || '/avatar-placeholder.png'}
                   alt={profile.name}
                   fill
                   className="object-cover"
@@ -74,8 +156,8 @@ export default function ProfilePage() {
               {isEditing ? (
                 <input
                   type="text"
-                  value={editedProfile.name}
-                  onChange={(e) => setEditedProfile({ ...editedProfile, name: e.target.value })}
+                  value={editedProfile?.name || ''}
+                  onChange={(e) => setEditedProfile(prev => prev ? { ...prev, name: e.target.value } : null)}
                   className="text-2xl font-bold bg-transparent border-b border-gray-300 dark:border-gray-700 focus:outline-none focus:border-primary-500"
                 />
               ) : (
@@ -108,8 +190,8 @@ export default function ProfilePage() {
                   {isEditing ? (
                     <input
                       type="email"
-                      value={editedProfile.email}
-                      onChange={(e) => setEditedProfile({ ...editedProfile, email: e.target.value })}
+                      value={editedProfile?.email || ''}
+                      onChange={(e) => setEditedProfile(prev => prev ? { ...prev, email: e.target.value } : null)}
                       className="flex-1 bg-transparent border-b border-gray-300 dark:border-gray-700 focus:outline-none focus:border-primary-500"
                     />
                   ) : (
@@ -118,29 +200,11 @@ export default function ProfilePage() {
                 </div>
                 <div className="flex items-center">
                   <Phone className="w-5 h-5 text-gray-400 mr-3" />
-                  {isEditing ? (
-                    <input
-                      type="tel"
-                      value={editedProfile.phone}
-                      onChange={(e) => setEditedProfile({ ...editedProfile, phone: e.target.value })}
-                      className="flex-1 bg-transparent border-b border-gray-300 dark:border-gray-700 focus:outline-none focus:border-primary-500"
-                    />
-                  ) : (
-                    <span>{profile.phone}</span>
-                  )}
+                  <span>{profile.phone}</span>
                 </div>
                 <div className="flex items-center">
                   <MapPin className="w-5 h-5 text-gray-400 mr-3" />
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={editedProfile.address}
-                      onChange={(e) => setEditedProfile({ ...editedProfile, address: e.target.value })}
-                      className="flex-1 bg-transparent border-b border-gray-300 dark:border-gray-700 focus:outline-none focus:border-primary-500"
-                    />
-                  ) : (
-                    <span>{profile.address}</span>
-                  )}
+                  <span>{profile.address}</span>
                 </div>
               </div>
             </div>
@@ -151,29 +215,11 @@ export default function ProfilePage() {
               <div className="space-y-4">
                 <div className="flex items-center">
                   <Building className="w-5 h-5 text-gray-400 mr-3" />
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={editedProfile.company}
-                      onChange={(e) => setEditedProfile({ ...editedProfile, company: e.target.value })}
-                      className="flex-1 bg-transparent border-b border-gray-300 dark:border-gray-700 focus:outline-none focus:border-primary-500"
-                    />
-                  ) : (
-                    <span>{profile.company}</span>
-                  )}
+                  <span>{profile.company}</span>
                 </div>
                 <div className="flex items-center">
                   <Globe className="w-5 h-5 text-gray-400 mr-3" />
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={editedProfile.website}
-                      onChange={(e) => setEditedProfile({ ...editedProfile, website: e.target.value })}
-                      className="flex-1 bg-transparent border-b border-gray-300 dark:border-gray-700 focus:outline-none focus:border-primary-500"
-                    />
-                  ) : (
-                    <span>{profile.website}</span>
-                  )}
+                  <span>{profile.website}</span>
                 </div>
               </div>
             </div>
@@ -182,16 +228,7 @@ export default function ProfilePage() {
           {/* Bio */}
           <div className="mt-8">
             <h2 className="text-lg font-semibold mb-4">Bio</h2>
-            {isEditing ? (
-              <textarea
-                value={editedProfile.bio}
-                onChange={(e) => setEditedProfile({ ...editedProfile, bio: e.target.value })}
-                rows={4}
-                className="w-full bg-gray-50 dark:bg-gray-800 rounded-lg p-4 focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-            ) : (
-              <p className="text-gray-600 dark:text-gray-400">{profile.bio}</p>
-            )}
+            <p className="text-gray-600 dark:text-gray-400">{profile.bio}</p>
           </div>
         </div>
       </motion.div>

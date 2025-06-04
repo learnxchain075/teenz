@@ -80,11 +80,11 @@ export default function AdminPage() {
         setIsLoading(true);
         setError(null);
         
-        console.group('📊 Admin Dashboard Data');
-        console.log('🔄 Fetching data for range:', dateRange);
+        // console.group('📊 Admin Dashboard Data');
+        // console.log('🔄 Fetching data for range:', dateRange);
         
         const res = await fetch('http://localhost:5000/api/v1/admin/dashboard');
-        console.log('📡 API Response Status:', res.status);
+       // console.log('📡 API Response Status:', res.status);
         
         if (!res.ok) {
           throw new Error('Failed to fetch dashboard data');
@@ -95,13 +95,13 @@ export default function AdminPage() {
           data.orders.yearly = data.orders.monthly * 12;
         }
         
-        console.log('📈 Dashboard Data:', data);
+        //console.log('📈 Dashboard Data:', data);
         setDashboardData(data);
       } catch (err) {
-        console.group('❌ Dashboard Error');
-        console.error('Error object:', err);
-        console.error('Error message:', err.message);
-        console.groupEnd();
+        // console.group('❌ Dashboard Error');
+        // console.error('Error object:', err);
+        // console.error('Error message:', err.message);
+        // console.groupEnd();
         
         setError('Failed to load dashboard data. Please try again later.');
       } finally {

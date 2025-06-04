@@ -28,6 +28,7 @@ export default function ProductDetail() {
   const router = useRouter();
   const { id } = useParams();
   const [product, setProduct] = useState<Product | null>(null);
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isZoomed, setIsZoomed] = useState(false);
@@ -36,15 +37,32 @@ export default function ProductDetail() {
   const addToCart = useCartStore((state) => state.addItem);
 
   useEffect(() => {
-    if (id) fetchProduct();
+    if (id) {
+      fetchProduct();
+    }
   }, [id]);
 
   const fetchProduct = async () => {
     try {
+      setIsLoading(true);
       const res = await fetch(`http://localhost:5000/api/v1/products/${id}`);
       if (!res.ok) throw new Error('Failed to fetch product');
       const data = await res.json();
       setProduct(data);
+
+      // Fetch related products from the same category
+      if (data.categoryId) {
+        const relatedRes = await fetch(`http://localhost:5000/api/v1/products?categoryId=${data.categoryId}`);
+        if (relatedRes.ok) {
+          const relatedData = await relatedRes.json();
+          // Filter out the current product and limit to 4 products
+          setRelatedProducts(
+            relatedData
+              .filter((p: Product) => p.id !== id)
+              .slice(0, 4)
+          );
+        }
+      }
     } catch (error) {
       console.error('Error fetching product:', error);
       toast.error('Failed to load product details');
@@ -83,8 +101,18 @@ export default function ProductDetail() {
 
     try {
       setIsAddingToCart(true);
-      await addToCart(product, quantity);
-      router.push('/checkout');
+      // Create a temporary checkout state without modifying the cart
+      const checkoutItem = {
+        product,
+        quantity,
+        selected: true,
+        isBuyNow: true // Flag to identify this is a buy now item
+      };
+      
+      // Store the buy now item in session storage
+      sessionStorage.setItem('buyNowItem', JSON.stringify(checkoutItem));
+      
+      router.push('/checkout?mode=buy_now');
     } catch (error) {
       console.error('Error proceeding to checkout:', error);
       toast.error('Failed to proceed to checkout');
@@ -339,6 +367,38 @@ export default function ProductDetail() {
               </div>
             </div>
           </div>
+
+          {/* Related Products Section */}
+          {relatedProducts.length > 0 && (
+            <div className="mt-16">
+              <h2 className="text-2xl font-semibold mb-8">Related Products</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {relatedProducts.map((relatedProduct) => (
+                  <Link
+                    key={relatedProduct.id}
+                    href={`/products/${relatedProduct.id}`}
+                    className="group"
+                  >
+                    <div className="bg-white dark:bg-card rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-shadow">
+                      <div className="relative aspect-square overflow-hidden">
+                        <Image
+                          src={relatedProduct.images?.[0]?.url || '/placeholder.png'}
+                          alt={relatedProduct.name}
+                          fill
+                          className="object-cover transform transition-transform group-hover:scale-110"
+                        />
+                        {/* Product Info - Always visible */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent flex flex-col justify-end p-4">
+                          <h3 className="text-white font-semibold text-lg mb-1">{relatedProduct.name}</h3>
+                          <div className="text-white font-bold">₹{relatedProduct.price}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

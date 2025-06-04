@@ -15,8 +15,8 @@ router.get('/collections', getCollections);
 // Route to get a collection by ID
 router.get('/collections/:id', getCollectionById);
 
-// Route to update a collection by ID
-router.put('/collections/:id', updateCollection);
+// Route to update a collection by ID - add multer middleware
+router.put('/collections/:id', upload.single("imageUrl"), updateCollection);
 
 // Route to delete a collection by ID
 router.delete('/collections/:id', deleteCollection);

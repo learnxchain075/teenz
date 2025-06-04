@@ -11,10 +11,10 @@ interface Category {
   name: string;
   description: string;
   imageUrl: string;
+  productCount: number;
+  status: string;
   icon?: string;
-  products?: any[];
   tags?: string[];
-  status?: string;
 }
 
 const containerVariants = {
@@ -45,10 +45,16 @@ export default function Categories({
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/v1/categories');
+        console.log('Fetching categories...');
+        const response = await fetch('http://localhost:5000/api/v1/categories', {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
         const data = await response.json();
         console.log('Categories API Response:', data);
-        // Only show active categories
+
+        // Filter active categories
         const activeCategories = data.filter((cat: Category) => cat.status === 'ACTIVE');
         setCategories(activeCategories);
       } catch (error) {
@@ -119,6 +125,7 @@ export default function Categories({
         >
           {categories.map((category) => {
             const Icon = iconMap[category.icon || 'Package'] || Package;
+            
             return (
               <motion.div
                 key={category.id}
@@ -169,11 +176,9 @@ export default function Categories({
                         <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm w-12 h-12 rounded-full flex items-center justify-center">
                           <Icon className="w-6 h-6 text-primary-600 dark:text-primary-400" />
                         </div>
-                        {category.products && (
-                          <span className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium">
-                            {category.products.length} items
-                          </span>
-                        )}
+                        <span className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium">
+                          {category.productCount || 0} items
+                        </span>
                       </div>
                       
                       <div>
@@ -186,23 +191,26 @@ export default function Categories({
                         
                         {category.tags && category.tags.length > 0 && (
                           <div className="flex flex-wrap gap-2 mb-4">
-                            {category.tags.map((tag, index) => (
+                            {category.tags.slice(0, 3).map((tag, index) => (
                               <span 
                                 key={index}
-                                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/20 text-white"
+                                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/20 text-white backdrop-blur-sm"
                               >
                                 <Tag className="w-3 h-3 mr-1" />
                                 {tag}
                               </span>
                             ))}
+                            {category.tags.length > 3 && (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/20 text-white backdrop-blur-sm">
+                                +{category.tags.length - 3} more
+                              </span>
+                            )}
                           </div>
                         )}
                         
                         <div className="flex items-center text-white group-hover:text-primary-400 transition-colors">
-                          <Link href={`/categories/${category.id}`} className="flex items-center">
-                            <span className="font-medium">Shop {category.name}</span>
-                            <ArrowRight className="w-5 h-5 ml-2 transform transition-transform group-hover:translate-x-1" />
-                          </Link>
+                          <span className="font-medium">Shop {category.name}</span>
+                          <ArrowRight className="w-5 h-5 ml-2 transform transition-transform group-hover:translate-x-1" />
                         </div>
                       </div>
                     </div>

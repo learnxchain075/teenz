@@ -1,5 +1,5 @@
 // API configuration
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
 
 export class APIError extends Error {
   constructor(
@@ -15,6 +15,7 @@ export class APIError extends Error {
 export const api = {
   get: async (endpoint: string) => {
     try {
+      console.log('Fetching from:', `${API_URL}${endpoint}`);
       const response = await fetch(`${API_URL}${endpoint}`);
       
       if (!response.ok) {
@@ -26,8 +27,11 @@ export const api = {
         );
       }
       
-      return response.json();
+      const data = await response.json();
+      console.log('API Response:', data);
+      return data;
     } catch (error) {
+      console.error('API Error:', error);
       if (error instanceof APIError) {
         throw error;
       }

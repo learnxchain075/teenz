@@ -4,13 +4,21 @@ import { uploadFile } from '../../config/upload';
 
 /**
  * Create a new product
- * Expected body: { name, price, stock, status, categoryId, images: string[] }
+ * Original body: { name, price, stock, status, categoryId, images: string[] }
+ * Added to body: tags: string[] for product tags
  */
 
 export const createProduct = async (req: Request, res: Response) :Promise<any>  => {
   try {
-   
     const { name, price, stock, status, categoryId } = req.body;
+    // Parse tags from form data - it comes as a string
+    let tags = [];
+    try {
+      tags = req.body.tags ? JSON.parse(req.body.tags) : [];
+    } catch (e) {
+      console.log('Error parsing tags:', e);
+      tags = [];
+    }
 
     // @ts-ignore - assuming multer has populated req.files
     const files = req.files as Express.Multer.File[];
@@ -34,21 +42,32 @@ export const createProduct = async (req: Request, res: Response) :Promise<any>  
         categoryId,
         images: {
           create: uploadedImages.map(img => ({ url: img.url }))
-        }
+        },
+        // Connect existing tags if provided
+        ...(tags.length > 0 && {
+          productTag: {
+            connect: tags.map((tagId: string) => ({ id: tagId }))
+          }
+        })
       },
       include: {
         images: true,
         category: true,
-        collections: true
+        collections: true,
+        productTag: true
       }
     });
 
     res.status(201).json(product);
   } catch (error) {
     console.error('[createProduct]', error);
-    res.status(500).json({ error: 'Failed to create product' });
+    res.status(500).json({ 
+      error: 'Failed to create product',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 };
+
 /**
  * Get all products
  */
@@ -58,12 +77,13 @@ export const getProducts = async (_req: Request, res: Response) => {
       include: {
         images: true,
         category: true,
-        collections: true
+        collections: true,
+        productTag: true
       }
     });
     res.json(products);
   } catch (error) {
-    console.error('[getProducts]', error);
+    // console.error('[getProducts]', error);
     res.status(500).json({ error: 'Failed to fetch products' });
   }
 };
@@ -80,7 +100,8 @@ export const getProductById = async (req: Request, res: Response): Promise<any> 
       include: {
         images: true,
         category: true,
-        collections: true
+        collections: true,
+        productTag: true
       }
     });
 
@@ -101,7 +122,7 @@ export const getProductById = async (req: Request, res: Response): Promise<any> 
 export const updateProduct = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, price, stock, status, categoryId, images } = req.body;
+    const { name, price, stock, status, categoryId, images, tags } = req.body;
 
     // Update scalar fields first
     await prisma.product.update({
@@ -111,7 +132,12 @@ export const updateProduct = async (req: Request, res: Response) => {
         price,
         stock,
         status,
-        categoryId
+        categoryId,
+        ...(tags && {
+          productTag: {
+            set: tags.map((tagId: string) => ({ id: tagId }))
+          }
+        })
       }
     });
 
@@ -128,7 +154,8 @@ export const updateProduct = async (req: Request, res: Response) => {
       include: {
         images: true,
         category: true,
-        collections: true
+        collections: true,
+        productTag: true
       }
     });
 
@@ -146,13 +173,60 @@ export const deleteProduct = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    await prisma.product.delete({
-      where: { id }
+    // First check if product exists
+    const product = await prisma.product.findUnique({
+      where: { id },
+      include: {
+        images: true,
+        ProductReview: true,
+        OrderItem: true,
+        collections: true
+      }
+    });
+
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    // Delete related records in the correct order
+    await prisma.$transaction(async (prisma) => {
+      // Delete product images
+      await prisma.productImage.deleteMany({
+        where: { productId: id }
+      });
+
+      // Delete product reviews
+      await prisma.productReview.deleteMany({
+        where: { productId: id }
+      });
+
+      // Delete order items
+      await prisma.orderItem.deleteMany({
+        where: { productId: id }
+      });
+
+      // Delete product from collections
+      await prisma.product.update({
+        where: { id },
+        data: {
+          collections: {
+            set: [] // Remove from all collections
+          }
+        }
+      });
+
+      // Finally delete the product
+      await prisma.product.delete({
+        where: { id }
+      });
     });
 
     res.status(204).send();
   } catch (error) {
     console.error('[deleteProduct]', error);
-    res.status(500).json({ error: 'Failed to delete product' });
+    res.status(500).json({ 
+      error: 'Failed to delete product',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 };

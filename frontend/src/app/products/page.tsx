@@ -13,7 +13,6 @@ import {
 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { api } from '@/lib/api';
-import type { Product } from '@/lib/types';
 import Link from 'next/link';
 
 const categories = ['Face Care', 'Body Care', 'Hair Care', 'Sun Protection', 'Electronics'];
@@ -23,6 +22,25 @@ const sortOptions = [
   { label: 'Newest', value: 'newest' },
   { label: 'Best Sellers', value: 'bestsellers' },
 ];
+
+interface Category {
+  id: string;
+  name: string;
+}
+
+interface Product {
+  id: string;
+  name: string;
+  description?: string;
+  price: number;
+  rating?: number;
+  review_count?: number;
+  images: { url: string }[];
+  category: Category;
+  categoryId: string;
+  created_at: string;
+  status: string;
+}
 
 export default function ProductsPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -35,58 +53,98 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [categories, setCategories] = useState<any[]>([]);
 
   useEffect(() => {
-    fetchProducts();
+    fetchData();
   }, []);
 
   useEffect(() => {
     filterProducts();
   }, [selectedCategories, priceRange, minRating, sortBy, searchQuery, products]);
 
-const fetchProducts = async () => {
-  try {
-    const res = await fetch('http://localhost:5000/api/v1/products');
-    if (!res.ok) {
-      throw new Error(`HTTP error! Status: ${res.status}`);
-    }
-    const data = await res.json();
-    setProducts(data);
-    setIsLoading(false);
-  } catch (error) {
-    console.error('Error fetching products:', error);
-    setIsLoading(false);
-  }
-};
+  const fetchData = async () => {
+    try {
+      setIsLoading(true);
+      // Fetch products and categories in parallel
+      const [productsRes, categoriesRes] = await Promise.all([
+        fetch('http://localhost:5000/api/v1/products'),
+        fetch('http://localhost:5000/api/v1/categories')
+      ]);
 
+      if (!productsRes.ok) throw new Error('Failed to fetch products');
+      if (!categoriesRes.ok) throw new Error('Failed to fetch categories');
+
+      const [productsData, categoriesData] = await Promise.all([
+        productsRes.json(),
+        categoriesRes.json()
+      ]);
+
+      console.log('Fetched Products:', productsData);
+      console.log('Fetched Categories:', categoriesData);
+
+      setProducts(productsData);
+      setCategories(categoriesData);
+      setFilteredProducts(productsData); // Initialize filtered products with all products
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      setIsLoading(false);
+    }
+  };
 
   const filterProducts = () => {
-    setIsLoading(true);
     let filtered = [...products];
+    console.log('Starting filtering with products:', filtered.length);
+    console.log('Selected categories:', selectedCategories);
 
+    // Only apply filters if any filter is active
+    const isAnyFilterActive = 
+      selectedCategories.length > 0 || 
+      searchQuery || 
+      priceRange[0] > 0 || 
+      priceRange[1] < 100 ||
+      minRating > 0;
+
+    if (!isAnyFilterActive) {
+      console.log('No filters active, showing all products');
+      setFilteredProducts(filtered);
+      return;
+    }
+
+    // Filter by categories
     if (selectedCategories.length > 0) {
-      filtered = filtered.filter((p) =>
-        selectedCategories.includes(p.category)
+      filtered = filtered.filter((p) => {
+        const matches = selectedCategories.includes(p.categoryId);
+        console.log(`Product ${p.name} (categoryId: ${p.categoryId}) matches filter: ${matches}`);
+        return matches;
+      });
+    }
+
+    // Filter by price range
+    if (priceRange[0] > 0 || priceRange[1] < 100) {
+      filtered = filtered.filter(
+        (p) => p.price >= priceRange[0] && p.price <= priceRange[1]
       );
     }
 
-    filtered = filtered.filter(
-      (p) =>
-        p.price >= priceRange[0] &&
-        p.price <= priceRange[1] &&
-        (p.rating ?? 0) >= minRating
-    );
+    // Filter by rating
+    if (minRating > 0) {
+      filtered = filtered.filter((p) => (p.rating ?? 0) >= minRating);
+    }
 
+    // Filter by search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
         (p) =>
           p.name.toLowerCase().includes(query) ||
           p.description?.toLowerCase().includes(query) ||
-          p.category.toLowerCase().includes(query)
+          p.category.name.toLowerCase().includes(query)
       );
     }
 
+    // Sort products
     switch (sortBy) {
       case 'price-asc':
         filtered.sort((a, b) => a.price - b.price);
@@ -106,8 +164,8 @@ const fetchProducts = async () => {
         break;
     }
 
+    console.log('Final filtered products:', filtered.length);
     setFilteredProducts(filtered);
-    setIsLoading(false);
   };
 
   const ProductCard = ({ product }: { product: Product }) => (
@@ -127,6 +185,11 @@ const fetchProducts = async () => {
           alt={product.name}
           className="w-full h-full object-cover"
         />
+        {/* Product Info Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-4">
+          <h3 className="text-white font-semibold text-lg mb-1">{product.name}</h3>
+          <div className="text-white font-bold">₹{product.price}</div>
+        </div>
         <div className="absolute top-4 right-4">
           <Button
             variant="secondary"
@@ -139,41 +202,35 @@ const fetchProducts = async () => {
         </div>
       </Link>
 
-      <div className={`p-6 ${viewMode === 'list' ? 'w-2/3' : ''}`}>
-        <Link href={`/products/${product.id}`}>
-          <h3 className="text-xl font-semibold mb-2">{product.name}</h3>
-        </Link>
-        <div className="flex items-center mb-2">
-          <div className="flex">
-            {[...Array(5)].map((_, i) => (
-              <Star
-                key={i}
-                className={`w-4 h-4 ${
-                  i < (product.rating ?? 0)
-                    ? 'text-yellow-400 fill-current'
-                    : 'text-gray-300'
-                }`}
-              />
-            ))}
+      {viewMode === 'list' && (
+        <div className="p-6 w-2/3">
+          <div className="flex items-center mb-2">
+            <div className="flex">
+              {[...Array(5)].map((_, i) => (
+                <Star
+                  key={i}
+                  className={`w-4 h-4 ${
+                    i < (product.rating ?? 0)
+                      ? 'text-yellow-400 fill-current'
+                      : 'text-gray-300'
+                  }`}
+                />
+              ))}
+            </div>
+            <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
+              ({product.rating ?? 0})
+            </span>
           </div>
-          <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
-            ({product.rating ?? 0})
-          </span>
-        </div>
-        <div className="text-2xl font-bold text-primary-600 dark:text-primary-400 mb-4">
-          ₹{product.price}
-        </div>
-        {viewMode === 'list' && (
           <p className="text-gray-600 dark:text-gray-400 mb-4">
             {product.description}
           </p>
-        )}
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-gray-500 dark:text-gray-400">
-            {product.category.name}
-          </span>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-500 dark:text-gray-400">
+              {product.category?.name}
+            </span>
+          </div>
         </div>
-      </div>
+      )}
     </motion.div>
   );
 
@@ -218,30 +275,45 @@ const fetchProducts = async () => {
               <div className="mb-6">
                 <h3 className="font-medium mb-3">Categories</h3>
                 <div className="space-y-2">
-                  {categories.map((category) => (
-                    <label key={category} className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={selectedCategories.includes(category)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedCategories([
-                              ...selectedCategories,
-                              category,
-                            ]);
-                          } else {
-                            setSelectedCategories(
-                              selectedCategories.filter((c) => c !== category)
-                            );
-                          }
-                        }}
-                        className="rounded border-gray-300 dark:border-gray-700 text-primary-600 focus:ring-primary-500"
-                      />
-                      <span className="ml-2 text-gray-700 dark:text-gray-300">
-                        {category}
-                      </span>
-                    </label>
-                  ))}
+                  {categories.map((category) => {
+                    // Count products in this category
+                    const productsInCategory = products.filter(p => {
+                      const matches = p.categoryId === category.id;
+                      console.log(`Checking product ${p.name} against category ${category.name}: ${matches}`);
+                      return matches;
+                    }).length;
+                    
+                    console.log(`Category ${category.name} has ${productsInCategory} products`);
+                    
+                    return (
+                      <label key={category.id} className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={selectedCategories.includes(category.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                const newSelected = [...selectedCategories, category.id];
+                                console.log('Adding category:', category.name, 'New selected:', newSelected);
+                                setSelectedCategories(newSelected);
+                              } else {
+                                const newSelected = selectedCategories.filter((c) => c !== category.id);
+                                console.log('Removing category:', category.name, 'New selected:', newSelected);
+                                setSelectedCategories(newSelected);
+                              }
+                            }}
+                            className="rounded border-gray-300 dark:border-gray-700 text-primary-600 focus:ring-primary-500"
+                          />
+                          <span className="ml-2 text-gray-700 dark:text-gray-300">
+                            {category.name}
+                          </span>
+                        </div>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">
+                          ({productsInCategory})
+                        </span>
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
 

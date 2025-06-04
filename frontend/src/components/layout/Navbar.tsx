@@ -20,6 +20,7 @@ import {
 import Logo from '@/components/ui/Logo';
 import CartDrawer from '@/components/cart/CartDrawer';
 import SearchModal from '@/components/layout/SearchModal';
+import Image from 'next/image';
 
 interface UserPayload {
   id: number;
@@ -33,6 +34,9 @@ interface Category {
   id: string;
   name: string;
   description?: string;
+  imageUrl?: string;
+  productCount?: number;
+  status?: string;
 }
 
 const mainLinks = [
@@ -55,9 +59,14 @@ export default function Navbar() {
   const [user, setUser] = useState<UserPayload | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const pathname = usePathname();
   const cartItemCount = useCartStore((state) => state.getItemCount());
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 10);
@@ -83,6 +92,7 @@ export default function Navbar() {
       try {
         const res = await fetch('http://localhost:5000/api/v1/categories');
         const data = await res.json();
+        console.log('Categories API Response:', data);
         setCategories(data);
       } catch (err) {
         console.error('Failed to fetch categories:', err);
@@ -131,8 +141,14 @@ export default function Navbar() {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
+    useCartStore.getState().clearCart();
     window.location.href = '/auth/login';
   };
+
+  // Don't render anything until client-side hydration is complete
+  if (!isMounted) {
+    return null;
+  }
 
   return (
     <>
@@ -170,25 +186,30 @@ export default function Navbar() {
                   
                   {link.hasDropdown && (
                     <div className="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-card rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 py-2">
-                      {categories.map((category) => (
+                      {Array.isArray(categories) && categories.map((category) => (
                         <Link
                           key={category.id}
                           href={`/categories/${category.id}`}
                           className={cn(
-                            "block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors",
+                            "block px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors",
                             hoveredCategory === category.id && "bg-gray-100 dark:bg-gray-800"
                           )}
                           onMouseEnter={() => setHoveredCategory(category.id)}
                           onMouseLeave={() => setHoveredCategory(null)}
                         >
                           <div className="flex items-center justify-between">
-                            <span>{category.name}</span>
+                            <span className="font-medium">{category.name}</span>
                             <ArrowRight className={cn(
                               "w-4 h-4 transform transition-transform",
                               hoveredCategory === category.id && "translate-x-1"
                             )} />
                           </div>
-                </Link>
+                          {category.productCount !== undefined && (
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                              {category.productCount} Products
+                            </p>
+                          )}
+                        </Link>
                       ))}
                     </div>
                   )}
@@ -216,7 +237,7 @@ export default function Navbar() {
                 className="relative text-gray-700 dark:text-gray-200 hover:text-primary-600 dark:hover:text-primary-400"
               >
                 <ShoppingCart className="h-5 w-5" />
-                {cartItemCount > 0 && (
+                {cartItemCount > 0 && isMounted && (
                   <span className="absolute -top-2 -right-2 bg-primary-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                     {cartItemCount}
                   </span>

@@ -4,12 +4,14 @@ import { toast } from 'react-hot-toast';
 
 interface PaymentDetails {
   amount: number;
-  userId: string | number;
+  userId: string;
+  name: string;
+  email: string;
+  description: string;
+  items?: any[];
+  total?: number;
   couponCode?: string;
-  email?: string;
   contact?: string;
-  name?: string;
-  description?: string;
 }
 
 interface OrderResponse {
@@ -55,9 +57,8 @@ export const usePayment = () => {
 
   const createOrder = async (details: PaymentDetails) => {
     try {
-      
       const payload = {
-        amount: Number(details.amount),
+        amount: Math.round(parseFloat(details.amount.toString())),
         userId: Number(details.userId),
         couponCode: details.couponCode
       };
@@ -78,7 +79,6 @@ export const usePayment = () => {
 
       if (!response.ok) {
         const error = await response.json();
-        console.log("object", error);
         throw new Error(error.error || 'Failed to create order');
       }
 
@@ -108,7 +108,10 @@ export const usePayment = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(paymentData)
+        body: JSON.stringify({
+          ...paymentData,
+          amount: Math.round(parseFloat(paymentData.amount.toString()))
+        })
       });
 
       if (!response.ok) {
@@ -140,12 +143,12 @@ export const usePayment = () => {
 
       const paymentResponse = await initializeRazorpayPayment({
         orderId: orderData.razorpayOrder.id,
-        amount: orderData.razorpayOrder.amount / 100, 
+        amount: details.amount,
         name: details.name || 'Your Store',
         description: details.description || 'Purchase',
         prefillEmail: details.email,
         prefillContact: details.contact,
-      }) as RazorpayResponse;
+      });
 
       if (paymentResponse.cancelled) {
         setIsLoading(false);
@@ -161,7 +164,7 @@ export const usePayment = () => {
       const verificationResponse = await verifyPayment({
         razorpay_order_id: orderData.razorpayOrder.id,
         razorpay_payment_id: paymentResponse.razorpay_payment_id,
-        amount: orderData.razorpayOrder.amount / 100,
+        amount: details.amount,
         method: 'razorpay',
         currency: 'INR',
       });

@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { ShoppingBag, Trash2, Plus, Minus, ArrowRight } from 'lucide-react';
 import { useCartStore } from '@/lib/store';
 import Button from '@/components/ui/Button';
+import { toast } from 'react-hot-toast';
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, getTotal, getItemCount } = useCartStore();
@@ -163,7 +164,7 @@ export default function CartPage() {
                 <div className="space-y-4">
                   <div className="flex justify-between">
                     <span className="text-gray-600 dark:text-gray-400">Subtotal</span>
-                    <span className="font-medium">${getTotal().toFixed(2)}</span>
+                    <span className="font-medium">₹{getTotal().toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600 dark:text-gray-400">Shipping</span>
@@ -171,24 +172,40 @@ export default function CartPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600 dark:text-gray-400">Tax</span>
-                    <span className="font-medium">${(getTotal() * 0.1).toFixed(2)}</span>
+                    <span className="font-medium">₹{(getTotal() * 0.1).toFixed(2)}</span>
                   </div>
                   <div className="border-t border-gray-200 dark:border-gray-800 pt-4 mt-4">
                     <div className="flex justify-between">
                       <span className="text-lg font-semibold">Total</span>
                       <span className="text-lg font-semibold">
-                        ${(getTotal() * 1.1).toFixed(2)}
+                        ₹{(getTotal() * 1.1).toFixed(2)}
                       </span>
                     </div>
                   </div>
                 </div>
 
                 <Link
-                  href="/checkout"
-                  className="w-full mt-6 inline-flex items-center justify-center px-4 py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 dark:bg-primary-400 dark:hover:bg-primary-500"
+                  href={getItemCount() > 0 ? "/checkout" : "#"}
+                  className={`w-full mt-6 inline-flex items-center justify-center px-4 py-2 font-medium rounded-lg ${
+                    getItemCount() > 0
+                      ? "bg-primary-600 text-white hover:bg-primary-700 dark:bg-primary-400 dark:hover:bg-primary-500"
+                      : "bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400"
+                  }`}
+                  onClick={(e) => {
+                    if (getItemCount() === 0) {
+                      e.preventDefault();
+                      toast.error('Please add items to cart before checkout');
+                    }
+                  }}
                 >
-                  Proceed to Checkout
-                  <ArrowRight className="ml-2 w-5 h-5" />
+                  {getItemCount() > 0 ? (
+                    <>
+                      Proceed to Checkout
+                      <ArrowRight className="ml-2 w-5 h-5" />
+                    </>
+                  ) : (
+                    'Add items to cart'
+                  )}
                 </Link>
 
                 <p className="mt-4 text-sm text-gray-500 dark:text-gray-400 text-center">

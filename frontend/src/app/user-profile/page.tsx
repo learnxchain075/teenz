@@ -221,18 +221,20 @@ export default function UserProfile() {
       {/* Orders */}
       <div className="mt-8 bg-white dark:bg-gray-900 p-6 rounded-xl shadow space-y-4">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-semibold">Orders</h3>
+          <h3 className="text-xl font-semibold">Recent Orders</h3>
           <Link href="/account/orders" className="text-primary-600 hover:text-primary-700 text-sm">
             View All Orders →
           </Link>
         </div>
         {user.Order?.length > 0 ? (
           <div className="space-y-6">
-            {user.Order.map((order: any) => (
+            {user.Order.slice(0, 3).map((order: any) => (
               <div key={order.id} className="border dark:border-gray-700 rounded-lg p-4">
                 <div className="flex justify-between items-start mb-4">
                   <div>
-                    <h4 className="font-medium text-lg">Order #{order.id}</h4>
+                    <h4 className="font-medium text-lg">
+                      {order.orderName ? order.orderName : `Order #${order.id.slice(-6)}`}
+                    </h4>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                       {new Date(order.createdAt).toLocaleDateString('en-US', {
                         year: 'numeric',
@@ -243,7 +245,7 @@ export default function UserProfile() {
                   </div>
                   <div className="flex flex-col items-end gap-2">
                     <span className={clsx(
-                      "px-3 py-1 rounded-full text-sm font-medium",
+                      "px-3 py-1 rounded-full text-xs font-medium",
                       order.status === 'ACTIVE' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
                       order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' :
                       order.status === 'CANCELLED' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' :
@@ -268,6 +270,12 @@ export default function UserProfile() {
                     {order.couponCode && (
                       <p className="text-sm text-gray-600 dark:text-gray-400">
                         Coupon Applied: <span className="font-medium text-primary-600">{order.couponCode}</span>
+                      </p>
+                    )}
+                    {/* Display order items if available */}
+                    {order.OrderItem && order.OrderItem.length > 0 && (
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Items: {order.OrderItem.map((item: any) => item.product?.name || 'Product').join(', ')}
                       </p>
                     )}
                   </div>

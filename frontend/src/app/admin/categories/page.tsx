@@ -12,12 +12,10 @@ import { toast } from 'react-hot-toast';
 interface Category {
   id: string;
   name: string;
-  description?: string;
-  imageUrl?: string;
-  products?: number;
-  status?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  description: string;
+  imageUrl: string;
+  productCount: number;
+  status: string;
 }
 
 interface CategoryData {
@@ -440,10 +438,10 @@ export default function CategoriesPage() {
     },
     {
       header: 'Products',
-      accessor: 'products',
+      accessor: 'productCount',
       cell: (value) => (
         <span className="text-gray-900">
-          {Array.isArray(value) ? value.length : '0'}
+          {value || '0'}
         </span>
       ),
     },

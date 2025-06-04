@@ -1,4 +1,3 @@
-
 import express from 'express';
 import { createCategory, getCategories, getCategoryById, updateCategory, deleteCategory } from '../../controller/category/createCategoryController';
 import multer from 'multer';
@@ -13,7 +12,7 @@ const upload = multer();
 router.post('/categories', upload.single("imageUrl"), createCategory);
 router.get('/categories', getCategories);
 router.get('/categories/:id', getCategoryById);
-router.put('/categories/:id', updateCategory);
+router.put('/categories/:id', upload.single("imageUrl"), updateCategory);
 router.delete('/categories/:id', deleteCategory);
 
 export default router;

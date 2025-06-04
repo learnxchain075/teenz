@@ -9,6 +9,7 @@ import Image from 'next/image';
 import axios from 'axios';
 import Modal from '@/components/ui/Modal';
 import toast, { Toaster } from 'react-hot-toast';
+import TagInput from '@/components/admin/TagInput';
 
 interface Tag {
   id: string;
@@ -79,7 +80,6 @@ const ProductsPage = () => {
         setLoading(true);
         setError(null);
 
-        // Fetch products
         let productsData;
         try {
           const productsResponse = await axios.get('http://localhost:5000/api/v1/products', {
@@ -87,27 +87,22 @@ const ProductsPage = () => {
           });
           productsData = productsResponse.data;
         } catch (error: any) {
-          console.error('Error fetching products:', error);
           throw new Error(`Failed to fetch products: ${error.response?.data?.error || error.message}`);
         }
 
-        // Fetch categories
         let categoriesData;
         try {
           const categoriesResponse = await axios.get('http://localhost:5000/api/v1/categories');
           categoriesData = categoriesResponse.data;
         } catch (error: any) {
-          console.error('Error fetching categories:', error);
           throw new Error(`Failed to fetch categories: ${error.response?.data?.error || error.message}`);
         }
 
-        // Fetch tags
         let tagsData;
         try {
           const tagsResponse = await axios.get<TagResponse>('http://localhost:5000/api/v1/product-tag');
           tagsData = tagsResponse.data.tags;
         } catch (error: any) {
-          console.error('Error fetching tags:', error);
           throw new Error(`Failed to fetch tags: ${error.response?.data?.error || error.message}`);
         }
 
@@ -116,7 +111,6 @@ const ProductsPage = () => {
         setTags(tagsData || []);
         setLoading(false);
       } catch (error: any) {
-        console.error('Error in fetchData:', error);
         setError(error.message || 'Failed to load data');
         setLoading(false);
       }
@@ -153,7 +147,6 @@ const ProductsPage = () => {
       setTags([...tags, response.data.tag]);
       return response.data.tag;
     } catch (error) {
-      console.error('Error creating tag:', error);
       return null;
     }
   };
@@ -163,16 +156,13 @@ const ProductsPage = () => {
     const tagName = input.trim();
     if (!tagName) return;
 
-    // Check if tag already exists
     let tag = tags.find(t => t.name.toLowerCase() === tagName.toLowerCase());
     
-    // If tag doesn't exist, create it
     if (!tag) {
       tag = await createTag(tagName);
-      if (!tag) return; // Failed to create tag
+      if (!tag) return;
     }
 
-    // Add tag to product if not already added
     if (!newProduct.tags.some(t => t.id === tag.id)) {
       setNewProduct(prev => ({
         ...prev,
@@ -184,7 +174,6 @@ const ProductsPage = () => {
   const handleCreateProduct = async () => {
     const errors = validateProduct(newProduct);
     
-    // Validate images
     if (!newProduct.images || newProduct.images.length === 0) {
       setCreateErrors({ ...errors, images: 'At least one image is required' });
       toast.error('Please add at least one image');
@@ -193,36 +182,32 @@ const ProductsPage = () => {
 
     if (Object.keys(errors).length > 0) {
       setCreateErrors(errors);
-      // Show validation errors in toast
       Object.values(errors).forEach(error => {
         toast.error(error);
       });
       return;
     }
 
-    // Show loading toast
     const loadingToast = toast.loading('Creating product...');
 
     try {
       const formData = new FormData();
       
-      // Add each field individually to match backend's req.body expectation
       formData.append('name', newProduct.name.trim());
       formData.append('price', newProduct.price.toString());
       formData.append('stock', newProduct.stock.toString());
       formData.append('status', newProduct.status);
       formData.append('categoryId', newProduct.categoryId);
 
-      // Add tags
       if (newProduct.tags && newProduct.tags.length > 0) {
-        formData.append('tags', JSON.stringify(newProduct.tags.map(tag => tag.id)));
+        const tagIds = newProduct.tags.map(tag => tag.id);
+        formData.append('tags', JSON.stringify(tagIds));
       }
 
-      // Add files to match backend's req.files expectation
       if (newProduct.images && newProduct.images.length > 0) {
-        newProduct.images.forEach((file: File) => {
-          formData.append('images', file);
-        });
+        for (let i = 0; i < newProduct.images.length; i++) {
+          formData.append('images', newProduct.images[i]);
+        }
       }
 
       const response = await axios.post('http://localhost:5000/api/v1/products', formData, {
@@ -231,7 +216,6 @@ const ProductsPage = () => {
         }
       });
       
-      // Dismiss loading toast and show success
       toast.dismiss(loadingToast);
       toast.success('Product created successfully!');
 
@@ -248,44 +232,18 @@ const ProductsPage = () => {
       });
       setCreateErrors({});
     } catch (error: any) {
-      // Dismiss loading toast
       toast.dismiss(loadingToast);
-
-      console.error('Error creating product:', error);
-      if (error.response) {
-        // Server responded with error
-        console.error('Server error details:', {
-          status: error.response.status,
-          data: error.response.data,
-          headers: error.response.headers
-        });
-        // Show error message from server
-        toast.error(error.response.data.error || 'Failed to create product');
-      } else if (error.request) {
-        // Network error
-        console.error('Network error - no response received');
-        toast.error('Network error. Please check your connection.');
-      } else {
-        // Other errors
-        console.error('Request setup error:', error.message);
-        toast.error('An unexpected error occurred');
-      }
       
       let errorMessage = 'Failed to create product';
-      let fieldErrors = {};
-      
-      if (error.response?.data) {
-        errorMessage = error.response.data.error || error.response.data.message || errorMessage;
-        fieldErrors = error.response.data.errors || {};
+      if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
       } else if (error.request) {
-        errorMessage = 'Network error. Please check your connection and try again.';
-      } else {
-        errorMessage = error.message || errorMessage;
+        errorMessage = 'Network error. Please check your connection.';
       }
-
+      
+      toast.error(errorMessage);
       setCreateErrors({ 
-        general: errorMessage,
-        ...fieldErrors
+        general: errorMessage
       });
     }
   };
@@ -312,20 +270,32 @@ const ProductsPage = () => {
       setEditingProduct(null);
       setEditErrors({});
     } catch (error) {
-      console.error('Error updating product:', error);
       setEditErrors({ general: 'Failed to update product' });
     }
   };
 
   const handleDeleteProduct = async () => {
     if (!productToDelete) return;
+    
+    const loadingToast = toast.loading('Deleting product...');
+    
     try {
+      const productToDeleteName = products.find(p => p.id === productToDelete)?.name;
       await axios.delete(`http://localhost:5000/api/v1/products/${productToDelete}`);
       setProducts(products.filter(p => p.id !== productToDelete));
       setShowDeleteModal(false);
       setProductToDelete(null);
-    } catch (error) {
-      console.error('Error deleting product:', error);
+      toast.success(`${productToDeleteName} has been deleted`);
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        toast.error('Product not found');
+      } else if (error.response?.status === 500) {
+        toast.error('Server error. Please try again later.');
+      } else {
+        toast.error('Failed to delete product');
+      }
+    } finally {
+      toast.dismiss(loadingToast);
     }
   };
 
@@ -405,7 +375,6 @@ const ProductsPage = () => {
           <div className="p-6">
             <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Create New Product</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {/* Product Name */}
               <div className="col-span-1 sm:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
                 <input
@@ -418,7 +387,6 @@ const ProductsPage = () => {
                 {createErrors.name && <p className="text-red-600 text-sm mt-1">{createErrors.name}</p>}
               </div>
 
-              {/* Price */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
                 <input
@@ -431,7 +399,6 @@ const ProductsPage = () => {
                 {createErrors.price && <p className="text-red-600 text-sm mt-1">{createErrors.price}</p>}
               </div>
 
-              {/* Stock */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Stock</label>
                 <input
@@ -445,42 +412,69 @@ const ProductsPage = () => {
                 {createErrors.stock && <p className="text-red-600 text-sm mt-1">{createErrors.stock}</p>}
               </div>
 
-              {/* Category */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">Category</label>
                 <select
                   value={newProduct.categoryId}
-                  onChange={e => setNewProduct({ ...newProduct, categoryId: e.target.value })}
-                  className="w-full p-3 border border-gray-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition"
+                  onChange={(e) => setNewProduct({ ...newProduct, categoryId: e.target.value })}
+                  className="w-full p-2 border rounded focus:ring-2 focus:ring-primary-500 dark:bg-gray-800"
                 >
-                  <option value="">Select Category</option>
-                  {categories.map(category => (
-                    <option key={category.id} value={category.id}>{category.name}</option>
+                  <option value="">Select a category</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
                   ))}
                 </select>
-                {createErrors.categoryId && <p className="text-red-600 text-sm mt-1">{createErrors.categoryId}</p>}
+                {createErrors.categoryId && (
+                  <p className="text-red-500 text-sm mt-1">{createErrors.categoryId}</p>
+                )}
               </div>
 
-              {/* Images */}
               <div className="col-span-1 sm:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Product Images</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Product Images <span className="text-red-500">*</span>
+                </label>
                 <div className="space-y-4">
                   <input
                     type="file"
                     multiple
                     accept="image/*"
-                    onChange={e => {
+                    onChange={(e) => {
                       const files = Array.from(e.target.files || []);
-                      setNewProduct({ ...newProduct, images: [...newProduct.images, ...files] });
-                      // Clear any existing image error when files are added
-                      if (files.length > 0 && createErrors.images) {
-                        setCreateErrors(prev => {
-                          const { images, ...rest } = prev;
-                          return rest;
-                        });
+                      if (files.length > 0) {
+                        const validFiles = files.filter(file => 
+                          file.type.startsWith('image/')
+                        );
+                        
+                        if (validFiles.length !== files.length) {
+                          toast.error('Please select only image files');
+                          return;
+                        }
+
+                        const maxSize = 5 * 1024 * 1024;
+                        const validSizedFiles = validFiles.filter(file => 
+                          file.size <= maxSize
+                        );
+
+                        if (validSizedFiles.length !== validFiles.length) {
+                          toast.error('Some files are too large. Maximum size is 5MB per image');
+                          return;
+                        }
+
+                        setNewProduct({ ...newProduct, images: [...newProduct.images, ...validSizedFiles] });
+                        
+                        if (createErrors.images) {
+                          setCreateErrors(prev => {
+                            const { images, ...rest } = prev;
+                            return rest;
+                          });
+                        }
                       }
                     }}
-                    className={`w-full p-3 border ${createErrors.images ? 'border-red-500' : 'border-gray-300'} rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition`}
+                    className={`w-full p-3 border ${
+                      createErrors.images ? 'border-red-500' : 'border-gray-300'
+                    } rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition`}
                   />
                   {createErrors.images && (
                     <p className="text-red-600 text-sm mt-1">{createErrors.images}</p>
@@ -490,9 +484,16 @@ const ProductsPage = () => {
                       {newProduct.images.map((file: File, index) => (
                         <div 
                           key={index}
-                          className="flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-lg"
+                          className="relative group"
                         >
-                          <span className="text-sm text-gray-700">{file.name}</span>
+                          <div className="w-20 h-20 rounded-lg overflow-hidden">
+                            <img
+                              src={URL.createObjectURL(file)}
+                              alt={`Preview ${index + 1}`}
+                              className="w-full h-full object-cover"
+                              onLoad={() => URL.revokeObjectURL(URL.createObjectURL(file))}
+                            />
+                          </div>
                           <button
                             type="button"
                             onClick={() => {
@@ -500,7 +501,7 @@ const ProductsPage = () => {
                               newImages.splice(index, 1);
                               setNewProduct({ ...newProduct, images: newImages });
                             }}
-                            className="text-gray-500 hover:text-red-500"
+                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                           >
                             ×
                           </button>
@@ -508,11 +509,12 @@ const ProductsPage = () => {
                       ))}
                     </div>
                   )}
-                  <p className="text-sm text-gray-500">You can select multiple images</p>
+                  <p className="text-sm text-gray-500">
+                    Upload up to 5 images (max 5MB each). Supported formats: JPG, PNG, GIF
+                  </p>
                 </div>
               </div>
 
-              {/* Status */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                 <select
@@ -526,58 +528,19 @@ const ProductsPage = () => {
                 </select>
               </div>
 
-              {/* Tags */}
-              <div className="col-span-1 sm:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tags</label>
-                <input
-                  type="text"
-                  placeholder="Enter tags (press Enter to add)"
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  onKeyDown={async (e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      const input = tagInput.trim();
-                      if (input) {
-                        await handleTagInput(input);
-                        setTagInput('');
-                      }
-                    }
-                  }}
-                  className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition"
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">Tags</label>
+                <TagInput
+                  existingTags={tags}
+                  selectedTags={newProduct.tags}
+                  onTagsChange={(newTags) => setNewProduct({ ...newProduct, tags: newTags })}
+                  onCreateTag={createTag}
                 />
-                <p className="text-sm text-gray-500 mt-1">Press Enter to add a tag</p>
-                {newProduct.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {newProduct.tags.map((tag) => (
-                      <div 
-                        key={tag.id}
-                        className="flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-lg"
-                      >
-                        <span className="text-sm text-gray-700">{tag.name}</span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setNewProduct(prev => ({
-                              ...prev,
-                              tags: prev.tags.filter(t => t.id !== tag.id)
-                            }));
-                          }}
-                          className="text-gray-500 hover:text-red-500"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
             </div>
 
-            {/* General Error */}
             {createErrors.general && <p className="text-red-600 text-sm mt-4 text-center">{createErrors.general}</p>}
 
-            {/* Submit Button */}
             <div className="mt-6 flex justify-end">
               <Button
                 onClick={handleCreateProduct}

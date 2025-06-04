@@ -13,7 +13,7 @@ import orderRoutes from "./order/orderRoutes";
 import dashboardStatsRoutes from "./dashboard/dashboardStatsRoutes";
 import   addressRoutes from "./address/addressRoutes";  
 
-// Create a main API router
+
 const apiRouter = express.Router();
 
 apiRouter.use(express.json());

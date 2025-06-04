@@ -7,9 +7,8 @@ import Button from '@/components/ui/Button';
 import { CreditCard, Truck, MapPin, ChevronRight, CheckCircle } from 'lucide-react';
 import Image from 'next/image';
 import { usePayment } from '@/hooks/usePayment';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
-
 
 const steps = [
   { id: 'shipping', title: 'Shipping', icon: Truck },
@@ -19,10 +18,13 @@ const steps = [
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [currentStep, setCurrentStep] = useState('shipping');
+  const [isLoading, setIsLoading] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [directBuyProduct, setDirectBuyProduct] = useState<any>(null);
   const [shippingDetails, setShippingDetails] = useState({
     firstName: '',
     lastName: '',
@@ -37,24 +39,99 @@ export default function CheckoutPage() {
     city: '',
     postalCode: ''
   });
-  const { items, getTotal, clearCart } = useCartStore();
-  const { initiatePayment, isLoading } = usePayment();
+  const { items, getSelectedItems, getSelectedTotal } = useCartStore();
+  const { initiatePayment, isLoading: paymentLoading } = usePayment();
 
   useEffect(() => {
-    setIsMounted(true);
-    // Check for authentication and get user data
-    const storedUser = localStorage.getItem('user');
-    if (!storedUser) {
-      router.push('/auth/login');
-      return;
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        // Check if this is a direct buy
+        const mode = searchParams.get('mode');
+        if (mode === 'buy_now') {
+          const buyNowItemStr = sessionStorage.getItem('buyNowItem');
+          if (buyNowItemStr) {
+            const buyNowItem = JSON.parse(buyNowItemStr);
+            setDirectBuyProduct(buyNowItem);
+          }
+        } else {
+          // Regular cart checkout - check if there are selected items
+          const selectedItems = getSelectedItems();
+          if (selectedItems.length === 0) {
+            toast.error('Please select items to checkout from your cart');
+            router.push('/cart');
+            return;
+          }
+        }
+
+        // Fetch user details if needed
+        const token = localStorage.getItem('token');
+        if (token) {
+          const userRes = await fetch('http://localhost:5000/api/v1/user/me', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (userRes.ok) {
+            const userData = await userRes.json();
+            setUser(userData);
+            // Pre-fill shipping details
+            if (userData.Address?.[0]) {
+              const address = userData.Address[0];
+              setShippingDetails({
+                firstName: userData.name.split(' ')[0] || '',
+                lastName: userData.name.split(' ').slice(1).join(' ') || '',
+                address: address.street || '',
+                city: address.city || '',
+                postalCode: address.zipCode || ''
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        toast.error('Failed to load checkout data');
+      } finally {
+        setIsLoading(false);
+        setIsMounted(true);
+      }
+    };
+
+    fetchData();
+  }, [searchParams, router, getSelectedItems]);
+
+  // Calculate total amount
+  const calculateTotal = () => {
+    if (!isMounted) return 0;
+    let total = 0;
+    
+    if (directBuyProduct) {
+      total = directBuyProduct.product.price * directBuyProduct.quantity;
+    } else {
+      const selectedItems = getSelectedItems();
+      total = selectedItems.reduce((sum, item) => {
+        return sum + (item.product.price * item.quantity);
+      }, 0);
     }
-    try {
-      const userData = JSON.parse(storedUser);
-      setUser(userData);
-    } catch (error) {
-      router.push('/auth/login');
+    
+    return parseFloat(total.toFixed(2));
+  };
+
+  // Get items to display
+  const getDisplayItems = () => {
+    if (directBuyProduct) {
+      return [directBuyProduct];
     }
-  }, [router]);
+    return getSelectedItems();
+  };
+
+  // Format currency for display
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount).replace('₹', '₹ ');
+  };
 
   const validateShippingDetails = () => {
     const newErrors = {
@@ -71,11 +148,8 @@ export default function CheckoutPage() {
       isValid = false;
     }
 
-    if (!shippingDetails.lastName.trim()) {
-      newErrors.lastName = 'Last name is required';
-      isValid = false;
-    }
-
+    // Last name is now optional
+    
     if (!shippingDetails.address.trim()) {
       newErrors.address = 'Address is required';
       isValid = false;
@@ -93,6 +167,78 @@ export default function CheckoutPage() {
 
     setErrors(newErrors);
     return isValid;
+  };
+
+  const handlePaymentSuccess = async (result: any) => {
+    try {
+      const totalAmount = calculateTotal();
+
+      if (!directBuyProduct) {
+        // Only clear selected items from regular cart checkout
+        const selectedItemIds = new Set(getSelectedItems().map(item => item.product.id));
+        const remainingItems = items.filter(item => !selectedItemIds.has(item.product.id));
+        useCartStore.setState({ items: remainingItems });
+      }
+
+      // Clear buy now item from session storage
+      sessionStorage.removeItem('buyNowItem');
+      setIsSuccess(true);
+      
+      // Show success toast with order details
+      toast.success('Payment successful!', {
+        duration: 3000,
+        position: 'top-center',
+      });
+      
+      // Show detailed order confirmation toast
+      setTimeout(() => {
+        toast.custom((t) => (
+          <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-white dark:bg-gray-800 shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}>
+            <div className="flex-1 w-0 p-4">
+              <div className="flex items-start">
+                <div className="flex-shrink-0 pt-0.5">
+                  <CheckCircle className="h-10 w-10 text-green-500" />
+                </div>
+                <div className="ml-3 flex-1">
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                    Order Placed Successfully!
+                  </p>
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    Order ID: {result.orderId}
+                  </p>
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    Total Amount: {formatCurrency(totalAmount)}
+                  </p>
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    Items: {directBuyProduct ? 1 : getSelectedItems().length}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="flex border-l border-gray-200 dark:border-gray-700">
+              <button
+                onClick={() => {
+                  toast.dismiss(t.id);
+                  router.push('/products');
+                }}
+                className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-primary-600 hover:text-primary-500 focus:outline-none"
+              >
+                Continue Shopping
+              </button>
+            </div>
+          </div>
+        ), { duration: 5000 });
+      }, 300);
+
+      // Navigate to products page after a short delay
+      setTimeout(() => {
+        router.push('/products');
+      }, 5500);
+
+    } catch (error) {
+      console.error('Error handling payment success:', error);
+      toast.error('Error updating cart after payment');
+    }
   };
 
   const handleContinue = async () => {
@@ -116,14 +262,20 @@ export default function CheckoutPage() {
       case 'payment':
         try {
           const loadingToastId = 'payment-processing';
+          const totalAmount = calculateTotal(); // Get amount in rupees
+          
           toast.loading('Processing your payment...', { id: loadingToastId });
 
+          console.log('Initiating payment with amount:', totalAmount); // Debug log
+
           const result = await initiatePayment({
-            amount: getTotal(),
+            amount: totalAmount, // Amount in rupees
             userId: user.id,
             name: user.name || 'Customer',
-            email: user.email,
-            description: `Order #${Date.now()}`,
+            email: user.email || '',
+            description: `Order for ${getSelectedItems().length} item(s) - Total: ${formatCurrency(totalAmount)}`,
+            items: getSelectedItems(),
+            total: totalAmount
           });
 
           toast.dismiss(loadingToastId);
@@ -134,43 +286,10 @@ export default function CheckoutPage() {
           }
 
           if (result.success) {
-            setIsSuccess(true);
-            clearCart();
-            
-            toast.success('Payment successful!');
-            
-            setTimeout(() => {
-              toast.custom((t) => (
-                <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-white dark:bg-gray-800 shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}>
-                  <div className="flex-1 w-0 p-4">
-                    <div className="flex items-start">
-                      <div className="flex-shrink-0 pt-0.5">
-                        <CheckCircle className="h-10 w-10 text-green-500" />
-                      </div>
-                      <div className="ml-3 flex-1">
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                          Order Placed Successfully!
-                        </p>
-                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                          Order ID: {result.orderId}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex border-l border-gray-200 dark:border-gray-700">
-                    <button
-                      onClick={() => {
-                        toast.dismiss(t.id);
-                        router.push('/orders');
-                      }}
-                      className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-primary-600 hover:text-primary-500 focus:outline-none"
-                    >
-                      View Order
-                    </button>
-                  </div>
-                </div>
-              ), { duration: 5000 });
-            }, 300);
+            handlePaymentSuccess({
+              ...result,
+              totalAmount
+            });
           } else {
             toast.error(result.error?.description || 'Payment failed. Please try again.');
           }
@@ -181,6 +300,30 @@ export default function CheckoutPage() {
         break;
     }
   };
+
+  // Save shipping details to localStorage when they change
+  useEffect(() => {
+    if (isMounted && Object.values(shippingDetails).some(value => value)) {
+      localStorage.setItem('shippingDetails', JSON.stringify(shippingDetails));
+    }
+  }, [shippingDetails, isMounted]);
+
+  // Render nothing until client-side hydration is complete
+  if (!isMounted) {
+    return null;
+  }
+
+  // Render loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-24 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="mt-2 text-gray-600 dark:text-gray-400">Loading checkout...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (isSuccess) {
     return (
@@ -198,7 +341,7 @@ export default function CheckoutPage() {
             <p className="text-gray-600 dark:text-gray-400 mb-8">
               Your order has been placed successfully. We'll send you an email confirmation shortly.
             </p>
-            <Button onClick={() => router.push('/orders')}>
+            <Button onClick={() => router.push('/account/orders')}>
               View Your Orders
             </Button>
           </div>
@@ -441,7 +584,7 @@ export default function CheckoutPage() {
               <div className="bg-white dark:bg-card rounded-xl shadow-lg p-6 space-y-4">
                 <h2 className="text-lg font-semibold">Order Summary</h2>
                 <div className="divide-y divide-gray-200 dark:divide-gray-800">
-                  {items.map((item) => (
+                  {getDisplayItems().map((item) => (
                     <div key={item.product.id} className="py-4 flex items-center">
                       <div className="relative h-16 w-16 rounded-lg overflow-hidden">
                         {item.product.images?.[0]?.url && (
@@ -460,7 +603,7 @@ export default function CheckoutPage() {
                         </p>
                       </div>
                       <p className="text-sm font-medium">
-                        ${(item.product.price * item.quantity).toFixed(2)}
+                        ₹{(item.product.price * item.quantity).toFixed(2)}
                       </p>
                     </div>
                   ))}
@@ -470,7 +613,7 @@ export default function CheckoutPage() {
                   <div className="flex justify-between">
                     <span className="text-base font-medium">Total</span>
                     <span className="text-base font-medium">
-                      {isMounted ? `$${getTotal().toFixed(2)}` : null}
+                      ₹{calculateTotal().toFixed(2)}
                     </span>
                   </div>
                 </div>

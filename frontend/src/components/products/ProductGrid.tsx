@@ -10,6 +10,7 @@ import type { Product } from '@/lib/types';
 import { useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { cn } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 
 interface ProductGridProps {
   products: Product[];
@@ -17,8 +18,10 @@ interface ProductGridProps {
 
 export default function ProductGrid({ products }: ProductGridProps) {
   // console.log(products);
+  const router = useRouter();
   const addToCart = useCartStore((state) => state.addItem);
   const [addingToCart, setAddingToCart] = useState<string | null>(null);
+  const [buyingNow, setBuyingNow] = useState<string | null>(null);
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
 
   const handleAddToCart = async (product: Product) => {
@@ -36,6 +39,31 @@ export default function ProductGrid({ products }: ProductGridProps) {
       console.error('Error adding to cart:', error);
     } finally {
       setAddingToCart(null);
+    }
+  };
+
+  const handleBuyNow = async (product: Product) => {
+    if (product.status === 'OUT_OF_STOCK') {
+      toast.error('This product is out of stock');
+      return;
+    }
+
+    try {
+      setBuyingNow(product.id);
+      // Store the buy now item in session storage
+      const buyNowItem = {
+        product,
+        quantity: 1,
+        selected: true,
+        isBuyNow: true
+      };
+      sessionStorage.setItem('buyNowItem', JSON.stringify(buyNowItem));
+      router.push('/checkout?mode=buy_now');
+    } catch (error) {
+      console.error('Error proceeding to checkout:', error);
+      toast.error('Failed to proceed to checkout');
+    } finally {
+      setBuyingNow(null);
     }
   };
 
@@ -173,15 +201,19 @@ export default function ProductGrid({ products }: ProductGridProps) {
                     )}
                   </Button>
                   
-                  <Link href={`/products/${product.id}`}>
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      className="whitespace-nowrap"
-                    >
-                      Buy Now
-                    </Button>
-                  </Link>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    className="whitespace-nowrap"
+                    onClick={() => handleBuyNow(product)}
+                    disabled={buyingNow === product.id || product.status === 'OUT_OF_STOCK'}
+                  >
+                    {buyingNow === product.id ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                    ) : (
+                      'Buy Now'
+                    )}
+                  </Button>
                 </div>
               </div>
             </div>
