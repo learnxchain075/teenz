@@ -1,14 +1,18 @@
-#!/bin/sh
+#!/bin/bash
 
-# First time cert
-if [ ! -d "/etc/letsencrypt/live/teenzskin.com" ]; then
-  certbot certonly --webroot -w /var/www/certbot \
-    -d teenzskin.com -d www.teenzskin.com -d api.teenzskin.com -d www.api.teenzskin.com \
-    --email contact@learnxchain.io --agree-tos --non-interactive
-fi
+# Start nginx in background so certbot can access HTTP challenge
+docker-compose up -d nginx
 
-# Cron job for auto-renew
-echo "0 0 * * * certbot renew --quiet --post-hook 'nginx -s reload'" > /etc/crontabs/root
+echo "Waiting 5 seconds for NGINX to initialize..."
+sleep 5
 
-# Start nginx
-nginx -g 'daemon off;'
+# Request certificate manually
+docker run --rm \
+  -v "$(pwd)/certbot/conf:/etc/letsencrypt" \
+  -v "$(pwd)/certbot/www:/var/www/certbot" \
+  certbot/certbot certonly --webroot -w /var/www/certbot \
+  --email contact@learnxchain.io --agree-tos --no-eff-email \
+  -d teenzskin.com -d www.teenzskin.com -d api.teenzskin.com
+
+# Reminder
+echo "✅ If successful, uncomment HTTPS blocks in nginx/default.conf and restart NGINX."
