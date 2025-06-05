@@ -89,7 +89,7 @@ export default function NewArrivalsPage() {
           </motion.p>
         </div>
 
-        <ProductGrid products={mockProducts} />
+        {/* <ProductGrid products={mockProducts} /> */}
       </div>
     </div>
   );
