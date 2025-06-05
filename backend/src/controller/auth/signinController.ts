@@ -101,3 +101,45 @@ export const signinController = async (req: Request, res: Response): Promise<any
     return res.status(500).json({ error: "Internal server error." });
   }
 };
+
+
+
+// Sign up controller to register ADMIN user
+export const signupAdminController = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { name, email, password } = req.body;
+
+    // Validate input
+    if (!email || !password || !name) {
+      return res.status(400).json({ error: "Name, email, and password are required." });
+    }
+
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (existingUser) {
+      return res.status(409).json({ error: "User already exists." });
+    }
+
+    // Hash the password
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    // Create new admin user with hashed password
+    const newUser = await prisma.user.create({
+      data: {
+        name,
+        email,
+        role: "ADMIN",
+        password: hashedPassword,
+      },
+    });
+
+    return res.status(201).json({ message: "Admin user created successfully.", userId: newUser.id });
+  } catch (error) {
+    console.error("Error in signupAdmin:", error);
+    return res.status(500).json({ error: "Internal server error." });
+  }
+};

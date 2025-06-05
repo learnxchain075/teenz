@@ -59,7 +59,7 @@ export default function LoginPage() {
           if (role === 'ADMIN') {
             router.push('/admin');
           } else {
-            router.push('/user-profile');
+            router.push('/account/profile');
           }
         }, 300);
       } else {
