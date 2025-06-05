@@ -8,6 +8,7 @@ import Image from 'next/image';
 import { usePayment } from '@/hooks/usePayment';
 import { useRouter, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
+import dynamic from 'next/dynamic';
 
 const steps = [
   { id: 'shipping', title: 'Shipping', icon: Truck },
@@ -15,7 +16,7 @@ const steps = [
   { id: 'payment', title: 'Payment', icon: CreditCard },
 ];
 
-export default function CheckoutPage() {
+function CheckoutPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [currentStep, setCurrentStep] = useState('shipping');
@@ -45,7 +46,7 @@ export default function CheckoutPage() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Check if this is a direct buy
+      
         const mode = searchParams.get('mode');
         if (mode === 'buy_now') {
           const buyNowItemStr = sessionStorage.getItem('buyNowItem');
@@ -54,7 +55,7 @@ export default function CheckoutPage() {
             setDirectBuyProduct(buyNowItem);
           }
         } else {
-          // Regular cart checkout - check if there are selected items
+         
           const selectedItems = getSelectedItems();
           if (selectedItems.length === 0) {
             toast.error('Please select items to checkout from your cart');
@@ -63,7 +64,6 @@ export default function CheckoutPage() {
           }
         }
 
-        // Fetch user details if needed
         const token = localStorage.getItem('token');
         if (token) {
           const userRes = await fetch('http://localhost:5000/api/v1/user/me', {
@@ -72,7 +72,7 @@ export default function CheckoutPage() {
           if (userRes.ok) {
             const userData = await userRes.json();
             setUser(userData);
-            // Pre-fill shipping details
+
             if (userData.Address?.[0]) {
               const address = userData.Address[0];
               setShippingDetails({
@@ -86,7 +86,7 @@ export default function CheckoutPage() {
           }
         }
       } catch (error) {
-        console.error('Error fetching data:', error);
+       // console.error('Error fetching data:', error);
         toast.error('Failed to load checkout data');
       } finally {
         setIsLoading(false);
@@ -97,7 +97,7 @@ export default function CheckoutPage() {
     fetchData();
   }, [searchParams, router, getSelectedItems]);
 
-  // Calculate total amount
+
   const calculateTotal = () => {
     if (!isMounted) return 0;
     let total = 0;
@@ -114,7 +114,7 @@ export default function CheckoutPage() {
     return parseFloat(total.toFixed(2));
   };
 
-  // Get items to display
+
   const getDisplayItems = () => {
     if (directBuyProduct) {
       return [directBuyProduct];
@@ -122,7 +122,6 @@ export default function CheckoutPage() {
     return getSelectedItems();
   };
 
-  // Format currency for display
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -147,7 +146,6 @@ export default function CheckoutPage() {
       isValid = false;
     }
 
-    // Last name is now optional
     
     if (!shippingDetails.address.trim()) {
       newErrors.address = 'Address is required';
@@ -173,19 +171,19 @@ export default function CheckoutPage() {
       const totalAmount = calculateTotal();
 
       if (!directBuyProduct) {
-        // Only clear selected items from regular cart checkout
+     
         const selectedItemIds = new Set(getSelectedItems().map(item => item.product.id));
         const remainingItems = items.filter(item => !selectedItemIds.has(item.product.id));
         useCartStore.setState({ items: remainingItems });
       }
 
-      // Clear buy now item from session storage
+     
       sessionStorage.removeItem('buyNowItem');
       setIsSuccess(true);
       
-      // Show success toast with order details
+    
       toast.success('Payment successful!', {
-        duration: 3000,
+        duration: 2000,
         position: 'top-center',
       });
       
@@ -226,13 +224,13 @@ export default function CheckoutPage() {
               </button>
             </div>
           </div>
-        ), { duration: 5000 });
+        ), { duration: 2000 });
       }, 300);
 
       // Navigate to products page after a short delay
       setTimeout(() => {
         router.push('/products');
-      }, 5500);
+      }, 5000);
 
     } catch (error) {
       console.error('Error handling payment success:', error);
@@ -672,3 +670,7 @@ export default function CheckoutPage() {
     </div>
   );
 }
+
+export default dynamic(() => Promise.resolve(CheckoutPage), {
+  ssr: false
+});
