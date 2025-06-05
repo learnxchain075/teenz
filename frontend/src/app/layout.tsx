@@ -250,7 +250,7 @@ export default function RootLayout({
           {!isAdminRoute ? (
             <>
               <Navbar className="fixed top-0 left-0 right-0 z-50" />
-              <main className="pt-20">
+              <main className="">
                 {children}
               </main>
               <Footer
