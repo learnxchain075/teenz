@@ -19,13 +19,14 @@ const BrandLogos = dynamic(() => import('@/components/sections/BrandLogos'));
 const FAQ = dynamic(() => import('@/components/sections/FAQ'));
 const Newsletter = dynamic(() => import('@/components/sections/Newsletter'));
 
+
 export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       <Hero />
       <Features />
       <FeaturedCollections autoplay items={5} />
-      <Categories items={['Face Care', 'Body Care', 'Hair', 'Essentials']} columns={4} />
+      {/* <Categories items={['Face Care', 'Body Care', 'Hair', 'Essentials']} columns={4} /> */}
       <HowItWorks
         steps={["Choose your products", "Add to cart", "Checkout securely", "Enjoy fast delivery"]}
         iconStyle="circle"

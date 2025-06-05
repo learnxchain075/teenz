@@ -106,13 +106,12 @@ export default function RootLayout({
           {!isAdminRoute ? (
             <>
               <Navbar className="fixed top-0 left-0 right-0 z-50" />
-              <main className="flex-grow pt-20 overflow-y-auto max-h-[calc(100vh-64px)] relative">
+              <main className="flex-grow  overflow-y-auto max-h-[calc(100vh-64px)] relative">
                 <div className="h-full overflow-y-auto">
                   {children}
                 </div>
               </main>
               <Footer
-                className="relative z-10"
                 columns={4}
                 links={['Help Center', 'Returns', 'Shipping', 'Privacy Policy', 'Terms of Use']}
                 socials={['Instagram', 'Facebook', 'Pinterest', 'YouTube']}

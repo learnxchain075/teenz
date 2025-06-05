@@ -231,13 +231,6 @@ export default function Navbar({ className }: NavbarProps) {
                 <Search className="h-5 w-5" />
               </button>
 
-              {/* <Link
-                href="/wishlist"
-                className="text-gray-700 dark:text-gray-200 hover:text-primary-600 dark:hover:text-primary-400"
-              >
-                <Heart className="h-5 w-5" />
-              </Link> */}
-
               <button
                 onClick={() => setIsCartOpen(true)}
                 className="relative text-gray-700 dark:text-gray-200 hover:text-primary-600 dark:hover:text-primary-400"
@@ -265,7 +258,7 @@ export default function Navbar({ className }: NavbarProps) {
                     </Link>
                   ) : (
                     <Link
-                      href="/user-profile"
+                      href="/account/profile"
                       className="text-sm underline text-primary-600 dark:text-primary-400 hover:no-underline"
                     >
                       My Profile

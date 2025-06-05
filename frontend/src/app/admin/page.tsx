@@ -22,6 +22,8 @@ import AdminChart from '@/components/admin/Chart';
 import AdminMetricCard from '@/components/admin/MetricCard';
 import AdminTable from '@/components/admin/Table';
 import Image from 'next/image';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 interface DashboardData {
   revenue: {
@@ -131,7 +133,24 @@ export default function AdminPage() {
       </div>
     );
   }
-
+  const exportToExcel = () => {
+    if (!dashboardData?.recentOrders?.length) return;
+    const data = dashboardData.recentOrders.map((order) => ({
+      OrderID: order.orderName,
+      UserID: order.userId,
+      Total: order.total,
+      Status: order.isPaid ? 'Completed' : order.status,
+      Coupon: order.couponCode || 'None',
+      RazorpayOrderID: order.razorpayOrderId,
+      CreatedAt: new Date(order.createdAt).toLocaleString(),
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Orders');
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const fileData = new Blob([excelBuffer], { type: 'application/octet-stream' });
+    saveAs(fileData, `Dashboard_Orders_${new Date().toISOString()}.xlsx`);
+  };
   const metrics = [
     {
       title: 'Total Revenue',
@@ -205,11 +224,8 @@ export default function AdminPage() {
             <option value="90d">Last 90 days</option>
             <option value="12m">Last 12 months</option>
           </select>
-          <Button variant="outline">
-            <Calendar className="w-5 h-5 mr-2" />
-            Custom Range
-          </Button>
-          <Button variant="outline">
+        
+          <Button onClick={exportToExcel}  variant="outline">
             <Download className="w-5 h-5 mr-2" />
             Export
           </Button>

@@ -18,7 +18,7 @@ export default function Hero({
   ctaText = "Shop Now"
 }: HeroProps) {
   return (
-    <section className="relative min-h-[90vh] flex items-center">
+    <section className="relative min-h-[90vh]  flex items-center">
       {/* Background Image with Overlay */}
       <div className="absolute inset-0 -z-10">
         <Image

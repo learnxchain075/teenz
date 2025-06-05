@@ -59,30 +59,7 @@ export const createProductReview = async (req: Request, res: Response): Promise<
 };
 
 
-// ✅ Get all approved reviews for a product
-export const getProductReviews = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { productId } = req.params;
 
-    if (!productId) {
-      res.status(400).json({ error: "Product ID is required." });
-      return;
-    }
-
-    const reviews = await prisma.productReview.findMany({
-      where: { productId, status: "APPROVED" },
-      include: {
-        user: {
-          select: { id: true, name: true, profilePicture: true },
-        },
-      },
-    });
-
-    res.status(200).json({ reviews });
-  } catch (error) {
-    res.status(500).json({ error: "Failed to fetch reviews", details: error instanceof Error ? error.message : String(error) });
-  }
-};
 
 // ✅ Get a single review (for admin use)
 export const getProductReviewById = async (req: Request, res: Response): Promise<void> => {
@@ -198,6 +175,77 @@ export const getAllReviews = async (req: Request, res: Response): Promise<void> 
       success: false, 
       error: "Failed to fetch reviews", 
       details: error instanceof Error ? error.message : String(error) 
+    });
+  }
+};
+
+
+// ✅ Get all approved reviews for a product
+export const getProductReviews = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { productId } = req.params;
+
+    if (!productId) {
+      res.status(400).json({ error: "Product ID is required." });
+      return;
+    }
+
+    const reviews = await prisma.productReview.findMany({
+      where: { productId, status: "APPROVED" },
+      include: {
+        user: {
+          select: { id: true, name: true, profilePicture: true },
+        },
+      },
+    });
+
+    res.status(200).json({ reviews });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch reviews", details: error instanceof Error ? error.message : String(error) });
+  }
+};
+
+// ✅ Get all APPROVED REVIEWS (for Home page )
+// ✅ Get all APPROVED REVIEWS (for Home page)
+export const getAllApprovedReviews = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const reviews = await prisma.productReview.findMany({
+      where: {
+        status: "APPROVED",
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            profilePicture: true,
+          },
+        },
+        product: {
+          select: {
+            id: true,
+            name: true,
+            images: {
+              select: {
+                url: true,
+              },
+              take: 1, 
+            },
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    res.status(200).json({ success: true, reviews });
+  } catch (error) {
+    console.error("[Get Approved Reviews]", error);
+    res.status(500).json({ 
+      success: false, 
+      error: "Failed to fetch approved reviews", 
+      details: error instanceof Error ? error.message : String(error),
     });
   }
 };
