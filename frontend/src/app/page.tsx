@@ -26,7 +26,7 @@ export default function Home() {
       <Hero />
       <Features />
       <FeaturedCollections autoplay items={5} />
-      {/* <Categories items={['Face Care', 'Body Care', 'Hair', 'Essentials']} columns={4} /> */}
+      <Categories columns={4} />
       <HowItWorks
         steps={["Choose your products", "Add to cart", "Checkout securely", "Enjoy fast delivery"]}
         iconStyle="circle"
@@ -46,7 +46,7 @@ export default function Home() {
         headline="Shop With Confidence"
       />
       <About />
-      <Testimonials />
+      {/* <Testimonials /> */}
       {/* <BlogPreview
         max={3}
         layout="grid"
