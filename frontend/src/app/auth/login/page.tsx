@@ -18,7 +18,7 @@ export default function LoginPage() {
   const [token, setToken] = useState<string | null>(null);
   const router = useRouter();
 
-  const API_URL = `http://localhost:5000/api/v1/auth/signin`;
+  const API_URL = `https://api.teenzskin.com/api/v1/auth/signin`;
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');

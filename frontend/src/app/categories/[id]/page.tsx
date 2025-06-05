@@ -41,7 +41,7 @@ export default function CategoryPage() {
   useEffect(() => {
     const fetchTags = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/v1/product-tag');
+        const res = await fetch('https://api.teenzskin.com/api/v1/product-tag');
         if (!res.ok) {
           throw new Error('Failed to fetch tags');
         }
@@ -60,19 +60,19 @@ export default function CategoryPage() {
     const fetchCategory = async () => {
       try {
         setIsLoading(true);
-        const res = await fetch(`http://localhost:5000/api/v1/categories/${id}?include=products.productTag`);
+        const res = await fetch(`https://api.teenzskin.com/api/v1/categories/${id}?include=products.productTag`);
         if (!res.ok) {
           throw new Error('Failed to fetch category');
         }
         const data = await res.json();
-        
+
         const productsWithImages = data.products.map((product: Product) => ({
           ...product,
-          images: product.images?.map(img => 
+          images: product.images?.map(img =>
             typeof img === 'string' ? { url: img } : img
           ) || []
         }));
-        
+
         setCategory({
           ...data,
           products: productsWithImages
@@ -151,11 +151,10 @@ export default function CategoryPage() {
             >
               <button
                 onClick={() => setSelectedTag(null)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                  !selectedTag
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${!selectedTag
                     ? 'bg-primary-600 text-white'
                     : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                }`}
+                  }`}
               >
                 All
               </button>
@@ -163,11 +162,10 @@ export default function CategoryPage() {
                 <button
                   key={tag.id}
                   onClick={() => setSelectedTag(tag.id)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                    selectedTag === tag.id
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${selectedTag === tag.id
                       ? 'bg-primary-600 text-white'
                       : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                  }`}
+                    }`}
                 >
                   {tag.name}
                 </button>
@@ -180,7 +178,7 @@ export default function CategoryPage() {
                   No products found
                 </h2>
                 <p className="text-gray-600 dark:text-gray-400">
-                  {selectedTag 
+                  {selectedTag
                     ? `No products found with the selected tag`
                     : 'No products available in this category'}
                 </p>

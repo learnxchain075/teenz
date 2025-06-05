@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  TrendingUp, 
-  Users, 
-  ShoppingBag, 
+import {
+  TrendingUp,
+  Users,
+  ShoppingBag,
   DollarSign,
   Download,
   Calendar,
@@ -81,22 +81,22 @@ export default function AdminPage() {
       try {
         setIsLoading(true);
         setError(null);
-        
+
         // console.group('📊 Admin Dashboard Data');
         // console.log('🔄 Fetching data for range:', dateRange);
-        
-        const res = await fetch('http://localhost:5000/api/v1/admin/dashboard');
-       // console.log('📡 API Response Status:', res.status);
-        
+
+        const res = await fetch('https://api.teenzskin.com/api/v1/admin/dashboard');
+        // console.log('📡 API Response Status:', res.status);
+
         if (!res.ok) {
           throw new Error('Failed to fetch dashboard data');
         }
-        
+
         const data = await res.json();
         if (data.orders && !data.orders.yearly) {
           data.orders.yearly = data.orders.monthly * 12;
         }
-        
+
         //console.log('📈 Dashboard Data:', data);
         setDashboardData(data);
       } catch (err) {
@@ -104,7 +104,7 @@ export default function AdminPage() {
         // console.error('Error object:', err);
         // console.error('Error message:', err.message);
         // console.groupEnd();
-        
+
         setError('Failed to load dashboard data. Please try again later.');
       } finally {
         setIsLoading(false);
@@ -154,8 +154,8 @@ export default function AdminPage() {
   const metrics = [
     {
       title: 'Total Revenue',
-      value: dashboardData?.revenue?.total 
-        ? `$${dashboardData.revenue.total.toLocaleString()}` 
+      value: dashboardData?.revenue?.total
+        ? `$${dashboardData.revenue.total.toLocaleString()}`
         : '$0',
       change: dashboardData?.revenue?.weekly > dashboardData?.revenue?.monthly ? '+' : '-',
       icon: DollarSign,
@@ -224,8 +224,8 @@ export default function AdminPage() {
             <option value="90d">Last 90 days</option>
             <option value="12m">Last 12 months</option>
           </select>
-        
-          <Button onClick={exportToExcel}  variant="outline">
+
+          <Button onClick={exportToExcel} variant="outline">
             <Download className="w-5 h-5 mr-2" />
             Export
           </Button>
@@ -250,16 +250,16 @@ export default function AdminPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white dark:bg-card rounded-xl shadow-sm p-6">
           <h2 className="text-lg font-semibold mb-4">Revenue Overview</h2>
-          <AdminChart 
-            type="line" 
-            data={dashboardData?.revenue} 
+          <AdminChart
+            type="line"
+            data={dashboardData?.revenue}
             title="Revenue"
           />
         </div>
         <div className="bg-white dark:bg-card rounded-xl shadow-sm p-6">
           <h2 className="text-lg font-semibold mb-4">Orders Overview</h2>
-          <AdminChart 
-            type="bar" 
+          <AdminChart
+            type="bar"
             data={dashboardData?.orders}
             title="Orders"
           />
@@ -296,13 +296,12 @@ export default function AdminPage() {
                   header: 'Status',
                   accessor: 'status',
                   cell: (value) => (
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      value === 'Completed'
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${value === 'Completed'
                         ? 'bg-green-100 text-green-800'
                         : value === 'ACTIVE'
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}>
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}>
                       {value}
                     </span>
                   ),
@@ -351,11 +350,10 @@ export default function AdminPage() {
                       {[...Array(5)].map((_, i) => (
                         <Star
                           key={i}
-                          className={`w-4 h-4 ${
-                            i < review.rating
+                          className={`w-4 h-4 ${i < review.rating
                               ? 'text-yellow-400 fill-current'
                               : 'text-gray-300'
-                          }`}
+                            }`}
                         />
                       ))}
                     </div>
@@ -380,13 +378,13 @@ export default function AdminPage() {
               data={formatProductData(dashboardData.products.topSelling)}
               columns={[
                 { header: 'Product', accessor: 'name' },
-                { 
-                  header: 'Sales', 
+                {
+                  header: 'Sales',
                   accessor: 'sales',
                   cell: (value) => value.toLocaleString()
                 },
-                { 
-                  header: 'Revenue', 
+                {
+                  header: 'Revenue',
                   accessor: 'revenue',
                   cell: (value) => `$${value.toLocaleString()}`
                 },

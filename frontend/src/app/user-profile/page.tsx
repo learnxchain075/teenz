@@ -35,7 +35,7 @@ export default function UserProfile() {
       }
 
       try {
-        const res = await fetch('http://localhost:5000/api/v1/user/me', {
+        const res = await fetch('https://api.teenzskin.com/api/v1/user/me', {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -71,7 +71,7 @@ export default function UserProfile() {
     if (!token) return;
 
     try {
-      const res = await fetch('http://localhost:5000/api/v1/address', {
+      const res = await fetch('https://api.teenzskin.com/api/v1/address', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -102,7 +102,7 @@ export default function UserProfile() {
     if (!token) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/v1/address/${id}`, {
+      const res = await fetch(`https://api.teenzskin.com/api/v1/address/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -135,7 +135,7 @@ export default function UserProfile() {
     if (!token) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/v1/address/${id}`, {
+      const res = await fetch(`https://api.teenzskin.com/api/v1/address/${id}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -243,28 +243,27 @@ export default function UserProfile() {
                     </div>
                   </div>
                   <div>
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      order.status === 'ACTIVE'
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${order.status === 'ACTIVE'
                         ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
                         : order.status === 'INACTIVE'
-                        ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-                        : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
-                    }`}>
+                          ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                          : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                      }`}>
                       {order.status}
                     </span>
                     <div className="mt-2 text-right">
                       <span className={clsx(
                         "text-sm",
-                        order.status === 'INACTIVE' ? 'text-red-600 dark:text-red-400' : 
-                        order.isPaid ? 'text-green-600 dark:text-green-400' : 'text-yellow-600 dark:text-yellow-400'
+                        order.status === 'INACTIVE' ? 'text-red-600 dark:text-red-400' :
+                          order.isPaid ? 'text-green-600 dark:text-green-400' : 'text-yellow-600 dark:text-yellow-400'
                       )}>
-                        {order.status === 'INACTIVE' ? 'Cancelled' : 
-                         order.isPaid ? 'Paid' : 'Payment Pending'}
+                        {order.status === 'INACTIVE' ? 'Cancelled' :
+                          order.isPaid ? 'Paid' : 'Payment Pending'}
                       </span>
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="mt-4 flex justify-between items-center pt-4 border-t dark:border-gray-700">
                   <div className="space-y-1">
                     <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -292,8 +291,8 @@ export default function UserProfile() {
         ) : (
           <div className="text-center py-8">
             <p className="text-gray-500 italic mb-4">No orders yet.</p>
-            <Link 
-              href="/products" 
+            <Link
+              href="/products"
               className="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700"
             >
               Start Shopping

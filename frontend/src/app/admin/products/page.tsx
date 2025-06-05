@@ -82,7 +82,7 @@ const ProductsPage = () => {
 
         let productsData;
         try {
-          const productsResponse = await axios.get('http://localhost:5000/api/v1/products', {
+          const productsResponse = await axios.get('https://api.teenzskin.com/api/v1/products', {
             params: { include: 'images,category,collections,tags' }
           });
           productsData = productsResponse.data;
@@ -92,7 +92,7 @@ const ProductsPage = () => {
 
         let categoriesData;
         try {
-          const categoriesResponse = await axios.get('http://localhost:5000/api/v1/categories');
+          const categoriesResponse = await axios.get('https://api.teenzskin.com/api/v1/categories');
           categoriesData = categoriesResponse.data;
         } catch (error: any) {
           throw new Error(`Failed to fetch categories: ${error.response?.data?.error || error.message}`);
@@ -100,7 +100,7 @@ const ProductsPage = () => {
 
         let tagsData;
         try {
-          const tagsResponse = await axios.get<TagResponse>('http://localhost:5000/api/v1/product-tag');
+          const tagsResponse = await axios.get<TagResponse>('https://api.teenzskin.com/api/v1/product-tag');
           tagsData = tagsResponse.data.tags;
         } catch (error: any) {
           throw new Error(`Failed to fetch tags: ${error.response?.data?.error || error.message}`);
@@ -141,7 +141,7 @@ const ProductsPage = () => {
   // Create a new tag
   const createTag = async (tagName: string): Promise<Tag | null> => {
     try {
-      const response = await axios.post<{ message: string; tag: Tag }>('http://localhost:5000/api/v1/product-tag', {
+      const response = await axios.post<{ message: string; tag: Tag }>('https://api.teenzskin.com/api/v1/product-tag', {
         name: tagName
       });
       setTags([...tags, response.data.tag]);
@@ -157,7 +157,7 @@ const ProductsPage = () => {
     if (!tagName) return;
 
     let tag = tags.find(t => t.name.toLowerCase() === tagName.toLowerCase());
-    
+
     if (!tag) {
       tag = await createTag(tagName);
       if (!tag) return;
@@ -173,7 +173,7 @@ const ProductsPage = () => {
 
   const handleCreateProduct = async () => {
     const errors = validateProduct(newProduct);
-    
+
     if (!newProduct.images || newProduct.images.length === 0) {
       setCreateErrors({ ...errors, images: 'At least one image is required' });
       toast.error('Please add at least one image');
@@ -192,7 +192,7 @@ const ProductsPage = () => {
 
     try {
       const formData = new FormData();
-      
+
       formData.append('name', newProduct.name.trim());
       formData.append('price', newProduct.price.toString());
       formData.append('stock', newProduct.stock.toString());
@@ -210,12 +210,12 @@ const ProductsPage = () => {
         }
       }
 
-      const response = await axios.post('http://localhost:5000/api/v1/products', formData, {
+      const response = await axios.post('https://api.teenzskin.com/api/v1/products', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
-      
+
       toast.dismiss(loadingToast);
       toast.success('Product created successfully!');
 
@@ -233,16 +233,16 @@ const ProductsPage = () => {
       setCreateErrors({});
     } catch (error: any) {
       toast.dismiss(loadingToast);
-      
+
       let errorMessage = 'Failed to create product';
       if (error.response?.data?.error) {
         errorMessage = error.response.data.error;
       } else if (error.request) {
         errorMessage = 'Network error. Please check your connection.';
       }
-      
+
       toast.error(errorMessage);
-      setCreateErrors({ 
+      setCreateErrors({
         general: errorMessage
       });
     }
@@ -264,7 +264,7 @@ const ProductsPage = () => {
         categoryId: editingProduct.categoryId,
         images: { create: editingProduct.images.map(url => ({ url })) }
       };
-      const response = await axios.put(`http://localhost:5000/api/v1/products/${editingProduct.id}`, productData);
+      const response = await axios.put(`https://api.teenzskin.com/api/v1/products/${editingProduct.id}`, productData);
       setProducts(products.map(p => (p.id === editingProduct.id ? response.data : p)));
       setShowEditModal(false);
       setEditingProduct(null);
@@ -276,12 +276,12 @@ const ProductsPage = () => {
 
   const handleDeleteProduct = async () => {
     if (!productToDelete) return;
-    
+
     const loadingToast = toast.loading('Deleting product...');
-    
+
     try {
       const productToDeleteName = products.find(p => p.id === productToDelete)?.name;
-      await axios.delete(`http://localhost:5000/api/v1/products/${productToDelete}`);
+      await axios.delete(`https://api.teenzskin.com/api/v1/products/${productToDelete}`);
       setProducts(products.filter(p => p.id !== productToDelete));
       setShowDeleteModal(false);
       setProductToDelete(null);
@@ -313,7 +313,7 @@ const ProductsPage = () => {
       <div className="text-center p-6 max-w-lg mx-auto">
         <div className="text-red-600 text-xl mb-4">⚠️ Error</div>
         <p className="text-gray-800 mb-4">{error}</p>
-        <Button 
+        <Button
           onClick={() => window.location.reload()}
           className="bg-blue-500 hover:bg-blue-600 text-white"
         >
@@ -443,17 +443,17 @@ const ProductsPage = () => {
                     onChange={(e) => {
                       const files = Array.from(e.target.files || []);
                       if (files.length > 0) {
-                        const validFiles = files.filter(file => 
+                        const validFiles = files.filter(file =>
                           file.type.startsWith('image/')
                         );
-                        
+
                         if (validFiles.length !== files.length) {
                           toast.error('Please select only image files');
                           return;
                         }
 
                         const maxSize = 5 * 1024 * 1024;
-                        const validSizedFiles = validFiles.filter(file => 
+                        const validSizedFiles = validFiles.filter(file =>
                           file.size <= maxSize
                         );
 
@@ -463,7 +463,7 @@ const ProductsPage = () => {
                         }
 
                         setNewProduct({ ...newProduct, images: [...newProduct.images, ...validSizedFiles] });
-                        
+
                         if (createErrors.images) {
                           setCreateErrors(prev => {
                             const { images, ...rest } = prev;
@@ -472,9 +472,8 @@ const ProductsPage = () => {
                         }
                       }
                     }}
-                    className={`w-full p-3 border ${
-                      createErrors.images ? 'border-red-500' : 'border-gray-300'
-                    } rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition`}
+                    className={`w-full p-3 border ${createErrors.images ? 'border-red-500' : 'border-gray-300'
+                      } rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition`}
                   />
                   {createErrors.images && (
                     <p className="text-red-600 text-sm mt-1">{createErrors.images}</p>
@@ -482,7 +481,7 @@ const ProductsPage = () => {
                   {newProduct.images.length > 0 && (
                     <div className="flex flex-wrap gap-2">
                       {newProduct.images.map((file: File, index) => (
-                        <div 
+                        <div
                           key={index}
                           className="relative group"
                         >
@@ -716,10 +715,10 @@ const ProductsPage = () => {
                   cell: value => (
                     <span
                       className={`px-2 py-1 rounded-full text-xs font-medium ${value === ProductStatus.IN_STOCK
-                          ? 'bg-green-100 text-green-800'
-                          : value === ProductStatus.LOW_STOCK
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-red-100 text-red-800'
+                        ? 'bg-green-100 text-green-800'
+                        : value === ProductStatus.LOW_STOCK
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-red-100 text-red-800'
                         }`}
                     >
                       {value}

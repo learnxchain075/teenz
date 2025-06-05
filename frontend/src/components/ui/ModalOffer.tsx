@@ -63,7 +63,7 @@ export default function ModalOffer({
     setIsSubmitting(true);
 
     try {
-      const res = await fetch('http://localhost:5000/api/v1/subscribe', {
+      const res = await fetch('https://api.teenzskin.com/api/v1/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),

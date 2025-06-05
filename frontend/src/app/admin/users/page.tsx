@@ -17,7 +17,7 @@ export default function UsersPage() {
   useEffect(() => {
     async function fetchUsers() {
       try {
-        const response = await fetch('http://localhost:5000/api/v1/admin/users');
+        const response = await fetch('https://api.teenzskin.com/api/v1/admin/users');
         const data = await response.json();
         const transformedData = data.map((user) => ({
           id: user.id,
@@ -117,8 +117,8 @@ export default function UsersPage() {
                 accessor: 'status',
                 cell: (value) => (
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${value === 'Active'
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-red-100 text-red-800'
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-red-100 text-red-800'
                     }`}>
                     {value}
                   </span>

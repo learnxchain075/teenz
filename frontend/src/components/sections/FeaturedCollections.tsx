@@ -37,7 +37,7 @@ export default function FeaturedCollections({
   useEffect(() => {
     const fetchCollections = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/v1/collections');
+        const response = await fetch('https://api.teenzskin.com/api/v1/collections');
         const data = await response.json();
         console.log('Collections API Response:', data);
         // Only show active collections
@@ -75,7 +75,7 @@ export default function FeaturedCollections({
     <section className="py-20 bg-gray-50 dark:bg-gray-900">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <motion.h2 
+          <motion.h2
             className="text-3xl font-bold md:text-4xl mb-4"
             initial={{ opacity: 0, y: -20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -84,7 +84,7 @@ export default function FeaturedCollections({
           >
             Featured Collections
           </motion.h2>
-          <motion.p 
+          <motion.p
             className="text-xl text-gray-600 dark:text-gray-400"
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}

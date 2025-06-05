@@ -22,7 +22,7 @@ export default function CategoriesPage() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/v1/categories');
+        const res = await fetch('https://api.teenzskin.com/api/v1/categories');
         const data = await res.json();
         console.log('Categories API Response:', data);
         setCategories(data);
@@ -53,7 +53,7 @@ export default function CategoriesPage() {
               Explore our wide range of products by category
             </p>
           </div>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {categories.map((category) => (
               <motion.div

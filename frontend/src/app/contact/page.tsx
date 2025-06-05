@@ -23,7 +23,7 @@ export default function ContactPage() {
     setIsSubmitting(true);
 
     try {
-      const res = await fetch('http://localhost:5000/api/v1/contact', {
+      const res = await fetch('https://api.teenzskin.com/api/v1/contact', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -51,14 +51,14 @@ export default function ContactPage() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <motion.h1 
+            <motion.h1
               className="text-4xl font-bold mb-4"
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
             >
               Get in Touch
             </motion.h1>
-            <motion.p 
+            <motion.p
               className="text-xl text-gray-600 dark:text-gray-400"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

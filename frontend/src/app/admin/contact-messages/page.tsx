@@ -17,7 +17,7 @@ export default function AdminContactMessagesPage() {
 
   const fetchMessages = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/v1/contact/message');
+      const res = await fetch('https://api.teenzskin.com/api/v1/contact/message');
       const data = await res.json();
       setMessages(data);
     } catch (err) {

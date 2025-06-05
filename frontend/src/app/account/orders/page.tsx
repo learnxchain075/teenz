@@ -49,7 +49,7 @@ export default function OrdersPage() {
     try {
       setIsLoading(true);
       const token = localStorage.getItem('token');
-      
+
       if (!token) {
         toast.error('Please login to view your orders');
         return;
@@ -65,7 +65,7 @@ export default function OrdersPage() {
       const user = JSON.parse(userData);
       const userId = user.id;
 
-      const { data } = await axios.get<ApiResponse>(`http://localhost:5000/api/v1/orders/user/${userId}`, {
+      const { data } = await axios.get<ApiResponse>(`https://api.teenzskin.com/api/v1/orders/user/${userId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -87,13 +87,13 @@ export default function OrdersPage() {
       }
     } catch (error: any) {
       console.error('Error fetching orders:', error);
-      
+
       // Handle Axios error response
       if (error.response) {
         const message = error.response.data?.message || error.message;
         if (error.response.status === 401) {
           toast.error('Session expired. Please login again');
-         
+
         } else {
           toast.error(message);
         }
@@ -112,13 +112,13 @@ export default function OrdersPage() {
   // Safe filtering of orders
   const filteredOrders = orders?.filter(order => {
     if (!order) return false;
-    
-    const matchesSearch = 
+
+    const matchesSearch =
       (order.orderName?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
       (order.id?.toLowerCase() || '').includes(searchQuery.toLowerCase());
-    
-    const matchesStatus = 
-      selectedStatus === 'all' || 
+
+    const matchesStatus =
+      selectedStatus === 'all' ||
       (order.status?.toLowerCase() || '') === selectedStatus.toLowerCase();
 
     return matchesSearch && matchesStatus;
@@ -184,7 +184,7 @@ export default function OrdersPage() {
               No Orders Found
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              {orders.length === 0 
+              {orders.length === 0
                 ? "You haven't placed any orders yet."
                 : "No orders match your search criteria."}
             </p>
@@ -213,7 +213,7 @@ export default function OrdersPage() {
                     <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
                       ${order.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
                         order.status === 'inactive' ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400' :
-                        'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'
+                          'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'
                       }`}
                     >
                       {order.status.charAt(0).toUpperCase() + order.status.slice(1)}

@@ -13,7 +13,7 @@ export default function HeaderAnnouncementPage() {
   const fetchHeader = async () => {
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:5000/api/v1/announcment');
+      const res = await fetch('https://api.teenzskin.com/api/v1/announcment');
       if (!res.ok) throw new Error('Failed to fetch');
       const data = await res.json();
       const latest = data?.[0]?.name || '';
@@ -38,7 +38,7 @@ export default function HeaderAnnouncementPage() {
 
     setSubmitting(true);
     try {
-      const res = await fetch('http://localhost:5000/api/v1/announcment/create', {
+      const res = await fetch('https://api.teenzskin.com/api/v1/announcment/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: inputValue.trim() }),

@@ -30,7 +30,7 @@ export default function SignupPage() {
   // Prefer NEXT_PUBLIC_API_URL so it works on Vercel/render without code changes
   const API_URL = process.env.NEXT_PUBLIC_API_URL
     ? `${process.env.NEXT_PUBLIC_API_URL}/auth/signup`
-    : "http://localhost:5000/api/v1/auth/signup";
+    : "https://api.teenzskin.com/api/v1/auth/signup";
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

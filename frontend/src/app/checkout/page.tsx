@@ -46,7 +46,7 @@ function CheckoutPage() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-      
+
         const mode = searchParams.get('mode');
         if (mode === 'buy_now') {
           const buyNowItemStr = sessionStorage.getItem('buyNowItem');
@@ -55,7 +55,7 @@ function CheckoutPage() {
             setDirectBuyProduct(buyNowItem);
           }
         } else {
-         
+
           const selectedItems = getSelectedItems();
           if (selectedItems.length === 0) {
             toast.error('Please select items to checkout from your cart');
@@ -66,7 +66,7 @@ function CheckoutPage() {
 
         const token = localStorage.getItem('token');
         if (token) {
-          const userRes = await fetch('http://localhost:5000/api/v1/user/me', {
+          const userRes = await fetch('https://api.teenzskin.com/api/v1/user/me', {
             headers: { Authorization: `Bearer ${token}` }
           });
           if (userRes.ok) {
@@ -86,7 +86,7 @@ function CheckoutPage() {
           }
         }
       } catch (error) {
-       // console.error('Error fetching data:', error);
+        // console.error('Error fetching data:', error);
         toast.error('Failed to load checkout data');
       } finally {
         setIsLoading(false);
@@ -101,7 +101,7 @@ function CheckoutPage() {
   const calculateTotal = () => {
     if (!isMounted) return 0;
     let total = 0;
-    
+
     if (directBuyProduct) {
       total = directBuyProduct.product.price * directBuyProduct.quantity;
     } else {
@@ -110,7 +110,7 @@ function CheckoutPage() {
         return sum + (item.product.price * item.quantity);
       }, 0);
     }
-    
+
     return parseFloat(total.toFixed(2));
   };
 
@@ -146,7 +146,7 @@ function CheckoutPage() {
       isValid = false;
     }
 
-    
+
     if (!shippingDetails.address.trim()) {
       newErrors.address = 'Address is required';
       isValid = false;
@@ -171,22 +171,22 @@ function CheckoutPage() {
       const totalAmount = calculateTotal();
 
       if (!directBuyProduct) {
-     
+
         const selectedItemIds = new Set(getSelectedItems().map(item => item.product.id));
         const remainingItems = items.filter(item => !selectedItemIds.has(item.product.id));
         useCartStore.setState({ items: remainingItems });
       }
 
-     
+
       sessionStorage.removeItem('buyNowItem');
       setIsSuccess(true);
-      
-    
+
+
       toast.success('Payment successful!', {
         duration: 2000,
         position: 'top-center',
       });
-      
+
       // Show detailed order confirmation toast
       setTimeout(() => {
         toast.custom((t) => (
@@ -260,7 +260,7 @@ function CheckoutPage() {
         try {
           const loadingToastId = 'payment-processing';
           const totalAmount = calculateTotal();
-          
+
           toast.loading('Processing your payment...', { id: loadingToastId });
 
           // Format cart items for the API
@@ -278,7 +278,7 @@ function CheckoutPage() {
 
           // Create address if it doesn't exist or has changed
           let addressId = user.Address?.[0]?.id;
-          
+
           // Check if address details have changed
           const hasAddressChanged = user.Address?.[0] && (
             user.Address[0].street !== shippingDetails.address ||
@@ -287,7 +287,7 @@ function CheckoutPage() {
           );
 
           if (!addressId || hasAddressChanged) {
-            const addressResponse = await fetch('http://localhost:5000/api/v1/address', {
+            const addressResponse = await fetch('https://api.teenzskin.com/api/v1/address', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -405,23 +405,20 @@ function CheckoutPage() {
               {steps.map((step, index) => (
                 <li
                   key={step.id}
-                  className={`flex items-center ${
-                    index < steps.length - 1 ? 'flex-1' : ''
-                  }`}
+                  className={`flex items-center ${index < steps.length - 1 ? 'flex-1' : ''
+                    }`}
                 >
                   <div
-                    className={`flex items-center ${
-                      currentStep === step.id
+                    className={`flex items-center ${currentStep === step.id
                         ? 'text-primary-600 dark:text-primary-400'
                         : 'text-gray-500 dark:text-gray-400'
-                    }`}
+                      }`}
                   >
                     <div
-                      className={`flex h-10 w-10 items-center justify-center rounded-full ${
-                        currentStep === step.id
+                      className={`flex h-10 w-10 items-center justify-center rounded-full ${currentStep === step.id
                           ? 'bg-primary-100 dark:bg-primary-900'
                           : 'bg-gray-100 dark:bg-gray-800'
-                      }`}
+                        }`}
                     >
                       <step.icon className="w-5 h-5" />
                     </div>
@@ -461,9 +458,8 @@ function CheckoutPage() {
                             ...shippingDetails,
                             firstName: e.target.value
                           })}
-                          className={`w-full px-4 py-2 rounded-lg border ${
-                            errors.firstName ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'
-                          } focus:outline-none focus:ring-2 focus:ring-primary-500`}
+                          className={`w-full px-4 py-2 rounded-lg border ${errors.firstName ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'
+                            } focus:outline-none focus:ring-2 focus:ring-primary-500`}
                           required
                         />
                         {errors.firstName && (
@@ -481,9 +477,8 @@ function CheckoutPage() {
                             ...shippingDetails,
                             lastName: e.target.value
                           })}
-                          className={`w-full px-4 py-2 rounded-lg border ${
-                            errors.lastName ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'
-                          } focus:outline-none focus:ring-2 focus:ring-primary-500`}
+                          className={`w-full px-4 py-2 rounded-lg border ${errors.lastName ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'
+                            } focus:outline-none focus:ring-2 focus:ring-primary-500`}
                           required
                         />
                         {errors.lastName && (
@@ -502,9 +497,8 @@ function CheckoutPage() {
                           ...shippingDetails,
                           address: e.target.value
                         })}
-                        className={`w-full px-4 py-2 rounded-lg border ${
-                          errors.address ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'
-                        } focus:outline-none focus:ring-2 focus:ring-primary-500`}
+                        className={`w-full px-4 py-2 rounded-lg border ${errors.address ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'
+                          } focus:outline-none focus:ring-2 focus:ring-primary-500`}
                         required
                       />
                       {errors.address && (
@@ -523,9 +517,8 @@ function CheckoutPage() {
                             ...shippingDetails,
                             city: e.target.value
                           })}
-                          className={`w-full px-4 py-2 rounded-lg border ${
-                            errors.city ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'
-                          } focus:outline-none focus:ring-2 focus:ring-primary-500`}
+                          className={`w-full px-4 py-2 rounded-lg border ${errors.city ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'
+                            } focus:outline-none focus:ring-2 focus:ring-primary-500`}
                           required
                         />
                         {errors.city && (
@@ -543,9 +536,8 @@ function CheckoutPage() {
                             ...shippingDetails,
                             postalCode: e.target.value
                           })}
-                          className={`w-full px-4 py-2 rounded-lg border ${
-                            errors.postalCode ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'
-                          } focus:outline-none focus:ring-2 focus:ring-primary-500`}
+                          className={`w-full px-4 py-2 rounded-lg border ${errors.postalCode ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'
+                            } focus:outline-none focus:ring-2 focus:ring-primary-500`}
                           required
                         />
                         {errors.postalCode && (

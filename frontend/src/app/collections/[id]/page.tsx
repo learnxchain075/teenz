@@ -20,7 +20,7 @@ export default function CollectionPage() {
         setError(null);
 
         // Fetch collection details
-        const collectionRes = await fetch(`http://localhost:5000/api/v1/collections/${id}`);
+        const collectionRes = await fetch(`https://api.teenzskin.com/api/v1/collections/${id}`);
         if (!collectionRes.ok) {
           throw new Error(`Failed to fetch collection: ${collectionRes.statusText}`);
         }
@@ -28,7 +28,7 @@ export default function CollectionPage() {
         setCollection(collectionData);
 
         // Fetch collection products
-        const productsRes = await fetch(`http://localhost:5000/api/v1/collections/${id}/products`);
+        const productsRes = await fetch(`https://api.teenzskin.com/api/v1/collections/${id}/products`);
         if (!productsRes.ok) {
           throw new Error(`Failed to fetch products: ${productsRes.statusText}`);
         }
@@ -89,7 +89,7 @@ export default function CollectionPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-24">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-2xl mx-auto text-center mb-16">
-          <motion.h1 
+          <motion.h1
             className="text-3xl font-bold md:text-4xl mb-4"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -97,7 +97,7 @@ export default function CollectionPage() {
             {collection.name}
           </motion.h1>
           {collection.description && (
-            <motion.p 
+            <motion.p
               className="text-xl text-gray-600 dark:text-gray-400"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

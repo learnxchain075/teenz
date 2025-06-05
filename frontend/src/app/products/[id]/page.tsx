@@ -46,14 +46,14 @@ export default function ProductDetail() {
   const fetchProduct = async () => {
     try {
       setIsLoading(true);
-      const res = await fetch(`http://localhost:5000/api/v1/products/${id}`);
+      const res = await fetch(`https://api.teenzskin.com/api/v1/products/${id}`);
       if (!res.ok) throw new Error('Failed to fetch product');
       const data = await res.json();
       setProduct(data);
 
       // Fetch related products from the same category
       if (data.categoryId) {
-        const relatedRes = await fetch(`http://localhost:5000/api/v1/products?categoryId=${data.categoryId}`);
+        const relatedRes = await fetch(`https://api.teenzskin.com/api/v1/products?categoryId=${data.categoryId}`);
         if (relatedRes.ok) {
           const relatedData = await relatedRes.json();
           // Filter out the current product and limit to 4 products
@@ -74,7 +74,7 @@ export default function ProductDetail() {
 
   const handleAddToCart = async () => {
     if (!product) return;
-    
+
     if (product.status === 'OUT_OF_STOCK') {
       toast.error('This product is out of stock');
       return;
@@ -94,7 +94,7 @@ export default function ProductDetail() {
 
   const handleBuyNow = async () => {
     if (!product) return;
-    
+
     if (product.status === 'OUT_OF_STOCK') {
       toast.error('This product is out of stock');
       return;
@@ -109,10 +109,10 @@ export default function ProductDetail() {
         selected: true,
         isBuyNow: true // Flag to identify this is a buy now item
       };
-      
+
       // Store the buy now item in session storage
       sessionStorage.setItem('buyNowItem', JSON.stringify(checkoutItem));
-      
+
       router.push('/checkout?mode=buy_now');
     } catch (error) {
       console.error('Error proceeding to checkout:', error);
@@ -212,11 +212,10 @@ export default function ProductDetail() {
                     <button
                       key={index}
                       onClick={() => setCurrentImageIndex(index)}
-                      className={`relative aspect-square w-20 rounded-lg overflow-hidden flex-shrink-0 ${
-                        currentImageIndex === index
+                      className={`relative aspect-square w-20 rounded-lg overflow-hidden flex-shrink-0 ${currentImageIndex === index
                           ? 'ring-2 ring-primary-600'
                           : 'opacity-60 hover:opacity-100'
-                      }`}
+                        }`}
                     >
                       <Image
                         src={typeof img === 'string' ? img : img?.url || '/placeholder.png'}
@@ -239,11 +238,10 @@ export default function ProductDetail() {
                   {[...Array(5)].map((_, i) => (
                     <Star
                       key={i}
-                      className={`w-5 h-5 ${
-                        i < Math.floor(product.rating || 0)
+                      className={`w-5 h-5 ${i < Math.floor(product.rating || 0)
                           ? 'text-yellow-400 fill-current'
                           : 'text-gray-300'
-                      }`}
+                        }`}
                     />
                   ))}
                 </div>
@@ -269,13 +267,12 @@ export default function ProductDetail() {
 
               <div className="space-y-6">
                 {/* Stock Status */}
-                <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                  isOutOfStock
+                <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${isOutOfStock
                     ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
                     : isLowStock
-                    ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
-                    : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                }`}>
+                      ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                      : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                  }`}>
                   {isOutOfStock ? 'Out of Stock' : isLowStock ? 'Low Stock' : 'In Stock'}
                 </div>
 
@@ -338,8 +335,8 @@ export default function ProductDetail() {
                   <div>
                     <span className="text-gray-600 dark:text-gray-400">Category:</span>
                     <span className="ml-2 font-medium">
-                      {typeof product.category === 'string' 
-                        ? product.category 
+                      {typeof product.category === 'string'
+                        ? product.category
                         : (product.category as any)?.name || 'Uncategorized'}
                     </span>
                   </div>
@@ -357,16 +354,16 @@ export default function ProductDetail() {
             <h2 className="text-2xl font-semibold mb-8">Customer Reviews</h2>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2">
-                <ReviewList 
-                  productId={id as string} 
+                <ReviewList
+                  productId={id as string}
                   onReviewCountChange={updateReviewCount}
                 />
               </div>
               <div>
                 <div className="bg-white dark:bg-card rounded-xl shadow-sm p-6">
                   <h3 className="text-lg font-semibold mb-4">Write a Review</h3>
-                  <ReviewForm 
-                    productId={id as string} 
+                  <ReviewForm
+                    productId={id as string}
                     onSuccess={(e) => {
                       if (e) e.preventDefault();
                       // Find the ReviewList component and call its fetchReviews method
@@ -377,7 +374,7 @@ export default function ProductDetail() {
                           reviewList.fetchReviews();
                         }
                       }
-                    }} 
+                    }}
                   />
                 </div>
               </div>

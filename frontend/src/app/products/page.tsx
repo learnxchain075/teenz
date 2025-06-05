@@ -68,8 +68,8 @@ export default function ProductsPage() {
       setIsLoading(true);
       // Fetch products and categories in parallel
       const [productsRes, categoriesRes] = await Promise.all([
-        fetch('http://localhost:5000/api/v1/products'),
-        fetch('http://localhost:5000/api/v1/categories')
+        fetch('https://api.teenzskin.com/api/v1/products'),
+        fetch('https://api.teenzskin.com/api/v1/categories')
       ]);
 
       if (!productsRes.ok) throw new Error('Failed to fetch products');
@@ -99,10 +99,10 @@ export default function ProductsPage() {
     console.log('Selected categories:', selectedCategories);
 
     // Only apply filters if any filter is active
-    const isAnyFilterActive = 
-      selectedCategories.length > 0 || 
-      searchQuery || 
-      priceRange[0] > 0 || 
+    const isAnyFilterActive =
+      selectedCategories.length > 0 ||
+      searchQuery ||
+      priceRange[0] > 0 ||
       priceRange[1] < 100 ||
       minRating > 0;
 
@@ -172,9 +172,8 @@ export default function ProductsPage() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`bg-white dark:bg-card rounded-xl overflow-hidden shadow-lg ${
-        viewMode === 'list' ? 'flex' : ''
-      }`}
+      className={`bg-white dark:bg-card rounded-xl overflow-hidden shadow-lg ${viewMode === 'list' ? 'flex' : ''
+        }`}
     >
       <Link
         href={`/products/${product.id}`}
@@ -209,11 +208,10 @@ export default function ProductsPage() {
               {[...Array(5)].map((_, i) => (
                 <Star
                   key={i}
-                  className={`w-4 h-4 ${
-                    i < (product.rating ?? 0)
+                  className={`w-4 h-4 ${i < (product.rating ?? 0)
                       ? 'text-yellow-400 fill-current'
                       : 'text-gray-300'
-                  }`}
+                    }`}
                 />
               ))}
             </div>
@@ -254,9 +252,8 @@ export default function ProductsPage() {
         <div className="flex gap-8">
           {/* Filter Sidebar */}
           <div
-            className={`w-64 flex-shrink-0 transition-all duration-300 ${
-              isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-            }`}
+            className={`w-64 flex-shrink-0 transition-all duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+              }`}
           >
             <div className="bg-white dark:bg-card rounded-xl p-6 shadow-lg">
               <div className="flex items-center justify-between mb-6">
@@ -282,9 +279,9 @@ export default function ProductsPage() {
                       console.log(`Checking product ${p.name} against category ${category.name}: ${matches}`);
                       return matches;
                     }).length;
-                    
+
                     console.log(`Category ${category.name} has ${productsInCategory} products`);
-                    
+
                     return (
                       <label key={category.id} className="flex items-center justify-between">
                         <div className="flex items-center">
@@ -349,11 +346,10 @@ export default function ProductsPage() {
                     <button
                       key={rating}
                       onClick={() => setMinRating(rating)}
-                      className={`p-1 rounded ${
-                        minRating === rating
+                      className={`p-1 rounded ${minRating === rating
                           ? 'text-yellow-400'
                           : 'text-gray-300 dark:text-gray-600'
-                      }`}
+                        }`}
                     >
                       <Star className="w-6 h-6 fill-current" />
                     </button>
@@ -420,11 +416,10 @@ export default function ProductsPage() {
               </div>
             ) : (
               <div
-                className={`grid gap-6 ${
-                  viewMode === 'grid'
+                className={`grid gap-6 ${viewMode === 'grid'
                     ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
                     : 'grid-cols-1'
-                }`}
+                  }`}
               >
                 {filteredProducts.map((product) => (
                   <ProductCard key={product.id} product={product} />

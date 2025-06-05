@@ -8,7 +8,7 @@ const appStage = process.env.NEXT_PUBLIC_APP_STAGE || prod;
 const developmentConfig = {
   BASE_URL: "http://localhost:3000",
   apiGateway: {
-    BASE_URL: "http://localhost:5000/api/v1",
+    BASE_URL: "https://api.teenzskin.com/api/v1",
   },
 };
 

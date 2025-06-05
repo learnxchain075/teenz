@@ -46,7 +46,7 @@ export default function Categories({
     const fetchCategories = async () => {
       try {
         console.log('Fetching categories...');
-        const response = await fetch('http://localhost:5000/api/v1/categories', {
+        const response = await fetch('https://api.teenzskin.com/api/v1/categories', {
           headers: {
             'Content-Type': 'application/json'
           }
@@ -96,7 +96,7 @@ export default function Categories({
     <section className="py-20 bg-white dark:bg-card">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <motion.h2 
+          <motion.h2
             className="text-3xl font-bold md:text-4xl mb-4"
             initial={{ opacity: 0, y: -20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -105,7 +105,7 @@ export default function Categories({
           >
             Shop by Category
           </motion.h2>
-          <motion.p 
+          <motion.p
             className="text-xl text-gray-600 dark:text-gray-400"
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
@@ -125,7 +125,7 @@ export default function Categories({
         >
           {categories.map((category) => {
             const Icon = iconMap[category.icon || 'Package'] || Package;
-            
+
             return (
               <motion.div
                 key={category.id}
@@ -170,7 +170,7 @@ export default function Categories({
                       </div>
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent" />
-                    
+
                     <div className="absolute inset-0 p-6 flex flex-col justify-between">
                       <div className="flex justify-between items-start">
                         <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm w-12 h-12 rounded-full flex items-center justify-center">
@@ -180,7 +180,7 @@ export default function Categories({
                           {category.productCount || 0} items
                         </span>
                       </div>
-                      
+
                       <div>
                         <h3 className="text-2xl font-semibold text-white mb-2 line-clamp-1">
                           {category.name}
@@ -188,11 +188,11 @@ export default function Categories({
                         <p className="text-gray-200 mb-4 line-clamp-2">
                           {category.description}
                         </p>
-                        
+
                         {category.tags && category.tags.length > 0 && (
                           <div className="flex flex-wrap gap-2 mb-4">
                             {category.tags.slice(0, 3).map((tag, index) => (
-                              <span 
+                              <span
                                 key={index}
                                 className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/20 text-white backdrop-blur-sm"
                               >
@@ -207,7 +207,7 @@ export default function Categories({
                             )}
                           </div>
                         )}
-                        
+
                         <div className="flex items-center text-white group-hover:text-primary-400 transition-colors">
                           <span className="font-medium">Shop {category.name}</span>
                           <ArrowRight className="w-5 h-5 ml-2 transform transition-transform group-hover:translate-x-1" />

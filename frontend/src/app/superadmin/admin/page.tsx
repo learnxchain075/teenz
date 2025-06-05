@@ -19,7 +19,7 @@ export default function AdminSignupPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await axios.post('http://localhost:5000/api/v1/auth/superadmin/admin/signup', formData);
+      const res = await axios.post('https://api.teenzskin.com/api/v1/auth/superadmin/admin/signup', formData);
       toast.success('Admin created successfully!');
       setFormData({ name: '', email: '', password: '' });
     } catch (err: any) {

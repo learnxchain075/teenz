@@ -18,7 +18,7 @@ export default function ReviewForm({ productId, onSuccess }: ReviewFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!rating) {
       toast.error('Please select a rating');
       return;
@@ -28,15 +28,15 @@ export default function ReviewForm({ productId, onSuccess }: ReviewFormProps) {
       setIsSubmitting(true);
       const user = localStorage.getItem('user');
       const token = localStorage.getItem('token');
-      
+
       if (!user || !token) {
         toast.error('Please login to submit a review');
         return;
       }
 
       const { id: userId } = JSON.parse(user);
-      
-      const response = await fetch('http://localhost:5000/api/v1/product', {
+
+      const response = await fetch('https://api.teenzskin.com/api/v1/product', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -89,11 +89,10 @@ export default function ReviewForm({ productId, onSuccess }: ReviewFormProps) {
               className="focus:outline-none"
             >
               <Star
-                className={`w-6 h-6 ${
-                  value <= (hoveredRating || rating)
+                className={`w-6 h-6 ${value <= (hoveredRating || rating)
                     ? 'text-yellow-400 fill-current'
                     : 'text-gray-300'
-                }`}
+                  }`}
               />
             </button>
           ))}

@@ -42,10 +42,10 @@ interface Category {
 
 const mainLinks = [
   { name: 'Home', href: '/' },
-  { 
-    name: 'Shop', 
+  {
+    name: 'Shop',
     href: '/categories',
-    hasDropdown: true 
+    hasDropdown: true
   },
   { name: 'Collections', href: '/collections' },
   { name: 'About', href: '/about' },
@@ -82,7 +82,7 @@ export default function Navbar({ className }: NavbarProps) {
   useEffect(() => {
     const fetchHeader = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/v1/announcment');
+        const res = await fetch('https://api.teenzskin.com/api/v1/announcment');
         const data = await res.json();
         setHeaderAnnouncement(data?.[0]?.name || '');
       } catch (err) {
@@ -95,7 +95,7 @@ export default function Navbar({ className }: NavbarProps) {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/v1/categories');
+        const res = await fetch('https://api.teenzskin.com/api/v1/categories');
         const data = await res.json();
         console.log('Categories API Response:', data);
         setCategories(data);
@@ -177,19 +177,19 @@ export default function Navbar({ className }: NavbarProps) {
             <div className="hidden lg:flex items-center space-x-8">
               {mainLinks.map((link) => (
                 <div key={link.name} className="relative group">
-                <Link
-                  href={link.href}
+                  <Link
+                    href={link.href}
                     className="text-gray-700 dark:text-gray-200 relative flex items-center"
-                >
-                  <span className="relative">
-                    {link.name}
-                    <span className="absolute inset-x-0 -bottom-1 h-0.5 bg-primary-600 dark:bg-primary-400 transform origin-left scale-x-0 transition-transform group-hover:scale-x-100" />
-                  </span>
+                  >
+                    <span className="relative">
+                      {link.name}
+                      <span className="absolute inset-x-0 -bottom-1 h-0.5 bg-primary-600 dark:bg-primary-400 transform origin-left scale-x-0 transition-transform group-hover:scale-x-100" />
+                    </span>
                     {link.hasDropdown && (
                       <ChevronDown className="ml-1 h-4 w-4 transition-transform group-hover:rotate-180" />
                     )}
                   </Link>
-                  
+
                   {link.hasDropdown && (
                     <div className="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-card rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 py-2">
                       {Array.isArray(categories) && categories.map((category) => (

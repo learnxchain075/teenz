@@ -33,20 +33,20 @@ export default function ReviewList({ productId, isAdmin = false, onReviewCountCh
 
   const fetchReviews = async (e?: React.SyntheticEvent) => {
     if (e) e.preventDefault();
-    
+
     try {
       setIsLoading(true);
       setError(null);
-      
-      const endpoint = isAdmin 
-        ? 'http://localhost:5000/api/v1/admin/reviews'
-        : `http://localhost:5000/api/v1/product/${productId}`;
-      
+
+      const endpoint = isAdmin
+        ? 'https://api.teenzskin.com/api/v1/admin/reviews'
+        : `https://api.teenzskin.com/api/v1/product/${productId}`;
+
       const token = localStorage.getItem('token');
       const headers: HeadersInit = {
         'Content-Type': 'application/json'
       };
-      
+
       if (isAdmin && token) {
         headers['Authorization'] = `Bearer ${token}`;
       }
@@ -58,7 +58,7 @@ export default function ReviewList({ productId, isAdmin = false, onReviewCountCh
         throw new Error(data.error || 'Failed to fetch reviews');
       }
 
-      const productReviews = isAdmin 
+      const productReviews = isAdmin
         ? data.reviews.filter((review: Review) => review.productId === productId)
         : data.reviews;
 
@@ -97,7 +97,7 @@ export default function ReviewList({ productId, isAdmin = false, onReviewCountCh
         return;
       }
 
-      const response = await fetch(`http://localhost:5000/api/v1/review/status/${reviewId}`, {
+      const response = await fetch(`https://api.teenzskin.com/api/v1/review/status/${reviewId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -180,7 +180,7 @@ export default function ReviewList({ productId, isAdmin = false, onReviewCountCh
                 <User className="w-5 h-5 text-primary-600 dark:text-primary-400" />
               </div>
             )}
-            
+
             <div className="flex-1">
               <h4 className="font-medium">{review.user.name}</h4>
               <div className="flex items-center gap-2">
@@ -188,11 +188,10 @@ export default function ReviewList({ productId, isAdmin = false, onReviewCountCh
                   {[...Array(5)].map((_, i) => (
                     <Star
                       key={i}
-                      className={`w-4 h-4 ${
-                        i < review.rating
+                      className={`w-4 h-4 ${i < review.rating
                           ? 'text-yellow-400 fill-current'
                           : 'text-gray-300'
-                      }`}
+                        }`}
                     />
                   ))}
                 </div>
@@ -207,22 +206,20 @@ export default function ReviewList({ productId, isAdmin = false, onReviewCountCh
                 <Button
                   onClick={(e) => handleStatusUpdate(e, review.id, 'APPROVED')}
                   disabled={review.status === 'APPROVED'}
-                  className={`px-3 py-1 text-sm ${
-                    review.status === 'APPROVED'
+                  className={`px-3 py-1 text-sm ${review.status === 'APPROVED'
                       ? 'bg-green-100 text-green-800'
                       : 'bg-gray-100 text-gray-800 hover:bg-green-100 hover:text-green-800'
-                  }`}
+                    }`}
                 >
                   Approve
                 </Button>
                 <Button
                   onClick={(e) => handleStatusUpdate(e, review.id, 'REJECTED')}
                   disabled={review.status === 'REJECTED'}
-                  className={`px-3 py-1 text-sm ${
-                    review.status === 'REJECTED'
+                  className={`px-3 py-1 text-sm ${review.status === 'REJECTED'
                       ? 'bg-red-100 text-red-800'
                       : 'bg-gray-100 text-gray-800 hover:bg-red-100 hover:text-red-800'
-                  }`}
+                    }`}
                 >
                   Reject
                 </Button>

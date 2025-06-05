@@ -1,23 +1,20 @@
 // API configuration
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "https://api.teenzskin.com/api/v1";
 
 export class APIError extends Error {
-  constructor(
-    message: string,
-    public status?: number,
-    public details?: any
-  ) {
+  constructor(message: string, public status?: number, public details?: any) {
     super(message);
-    this.name = 'APIError';
+    this.name = "APIError";
   }
 }
 
 export const api = {
   get: async (endpoint: string) => {
     try {
-      console.log('Fetching from:', `${API_URL}${endpoint}`);
+      console.log("Fetching from:", `${API_URL}${endpoint}`);
       const response = await fetch(`${API_URL}${endpoint}`);
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
         throw new APIError(
@@ -26,33 +23,33 @@ export const api = {
           errorData
         );
       }
-      
+
       const data = await response.json();
-      console.log('API Response:', data);
+      console.log("API Response:", data);
       return data;
     } catch (error) {
-      console.error('API Error:', error);
+      console.error("API Error:", error);
       if (error instanceof APIError) {
         throw error;
       }
       throw new APIError(
-        'Failed to fetch data from API',
+        "Failed to fetch data from API",
         500,
-        error instanceof Error ? error.message : 'Unknown error'
+        error instanceof Error ? error.message : "Unknown error"
       );
     }
   },
-  
+
   post: async (endpoint: string, data: any) => {
     try {
       const response = await fetch(`${API_URL}${endpoint}`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(data),
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
         throw new APIError(
@@ -61,16 +58,16 @@ export const api = {
           errorData
         );
       }
-      
+
       return response.json();
     } catch (error) {
       if (error instanceof APIError) {
         throw error;
       }
       throw new APIError(
-        'Failed to post data to API',
+        "Failed to post data to API",
         500,
-        error instanceof Error ? error.message : 'Unknown error'
+        error instanceof Error ? error.message : "Unknown error"
       );
     }
   },
@@ -78,13 +75,13 @@ export const api = {
   put: async (endpoint: string, data: any) => {
     try {
       const response = await fetch(`${API_URL}${endpoint}`, {
-        method: 'PUT',
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(data),
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
         throw new APIError(
@@ -93,16 +90,16 @@ export const api = {
           errorData
         );
       }
-      
+
       return response.json();
     } catch (error) {
       if (error instanceof APIError) {
         throw error;
       }
       throw new APIError(
-        'Failed to update data in API',
+        "Failed to update data in API",
         500,
-        error instanceof Error ? error.message : 'Unknown error'
+        error instanceof Error ? error.message : "Unknown error"
       );
     }
   },
@@ -110,9 +107,9 @@ export const api = {
   delete: async (endpoint: string) => {
     try {
       const response = await fetch(`${API_URL}${endpoint}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
         throw new APIError(
@@ -121,16 +118,16 @@ export const api = {
           errorData
         );
       }
-      
+
       return response.json();
     } catch (error) {
       if (error instanceof APIError) {
         throw error;
       }
       throw new APIError(
-        'Failed to delete data from API',
+        "Failed to delete data from API",
         500,
-        error instanceof Error ? error.message : 'Unknown error'
+        error instanceof Error ? error.message : "Unknown error"
       );
     }
   },

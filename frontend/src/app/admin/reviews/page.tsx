@@ -153,13 +153,13 @@ export default function ReviewsPage() {
       try {
         setLoading(true);
         const token = localStorage.getItem('token');
-        
+
         if (!token) {
           setError('Authentication required');
           return;
         }
 
-        const response = await fetch('http://localhost:5000/api/v1/admin/reviews', {
+        const response = await fetch('https://api.teenzskin.com/api/v1/admin/reviews', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -192,7 +192,7 @@ export default function ReviewsPage() {
 
   // Filter reviews
   const filteredReviews = reviews.filter(review => {
-    const matchesSearch = 
+    const matchesSearch =
       review.product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       review.user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       review.comment.toLowerCase().includes(searchQuery.toLowerCase());
@@ -206,13 +206,13 @@ export default function ReviewsPage() {
   const handleStatusUpdate = async (reviewId: string, newStatus: 'APPROVED' | 'REJECTED') => {
     try {
       const token = localStorage.getItem('token');
-      
+
       if (!token) {
         toast.error('Authentication required');
         return;
       }
 
-      const response = await fetch(`http://localhost:5000/api/v1/admin/review/status/${reviewId}`, {
+      const response = await fetch(`https://api.teenzskin.com/api/v1/admin/review/status/${reviewId}`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -228,10 +228,10 @@ export default function ReviewsPage() {
       }
 
       // Update local state after successful API call
-      setReviews(reviews.map(review => 
+      setReviews(reviews.map(review =>
         review.id === reviewId ? { ...review, status: newStatus } : review
       ));
-      
+
       toast.success(data.message || `Review ${newStatus.toLowerCase()} successfully`);
     } catch (err: any) {
       console.error('Error updating review status:', err);
@@ -244,25 +244,25 @@ export default function ReviewsPage() {
     if (error) {
       return { type: 'error' as const, message: error };
     }
-    
+
     if (reviews.length === 0) {
       return {
         type: 'no-reviews' as const,
         message: 'When customers leave reviews, they will appear here.'
       };
     }
-    
+
     if (filteredReviews.length === 0) {
       const messages = [];
       if (searchQuery) messages.push('search term');
       if (selectedStatus !== 'all') messages.push('status filter');
-      
+
       return {
         type: 'no-results' as const,
         message: `No reviews match your ${messages.join(' and ')}. Try adjusting your filters.`
       };
     }
-    
+
     return null;
   };
 
@@ -346,26 +346,26 @@ export default function ReviewsPage() {
           {emptyState ? (
             <EmptyState type={emptyState.type} message={emptyState.message} />
           ) : (
-          <AdminTable
+            <AdminTable
               data={filteredReviews}
-            columns={[
-              {
-                header: 'Product',
-                accessor: 'product',
-                cell: (value) => (
-                  <div className="flex items-center">
-                    <div className="relative w-12 h-12 rounded-lg overflow-hidden mr-3">
-                      <Image
+              columns={[
+                {
+                  header: 'Product',
+                  accessor: 'product',
+                  cell: (value) => (
+                    <div className="flex items-center">
+                      <div className="relative w-12 h-12 rounded-lg overflow-hidden mr-3">
+                        <Image
                           src={value.images[0]?.url || '/placeholder.png'}
-                        alt={value.name}
-                        fill
-                        className="object-cover"
-                      />
+                          alt={value.name}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                      <div className="font-medium">{value.name}</div>
                     </div>
-                    <div className="font-medium">{value.name}</div>
-                  </div>
-                ),
-              },
+                  ),
+                },
                 {
                   header: 'Customer',
                   accessor: 'user',
@@ -388,76 +388,74 @@ export default function ReviewsPage() {
                     </div>
                   ),
                 },
-              {
-                header: 'Rating',
-                accessor: 'rating',
-                cell: (value) => (
-                  <div className="flex">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className={`w-4 h-4 ${
-                          i < value
-                            ? 'text-yellow-400 fill-current'
-                            : 'text-gray-300'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                ),
-              },
-              {
-                header: 'Comment',
-                accessor: 'comment',
-                cell: (value) => (
-                  <div className="max-w-xs truncate">{value}</div>
-                ),
-              },
-              {
-                header: 'Status',
-                accessor: 'status',
-                cell: (value) => (
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      value === 'APPROVED'
-                      ? 'bg-green-100 text-green-800'
+                {
+                  header: 'Rating',
+                  accessor: 'rating',
+                  cell: (value) => (
+                    <div className="flex">
+                      {[...Array(5)].map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`w-4 h-4 ${i < value
+                              ? 'text-yellow-400 fill-current'
+                              : 'text-gray-300'
+                            }`}
+                        />
+                      ))}
+                    </div>
+                  ),
+                },
+                {
+                  header: 'Comment',
+                  accessor: 'comment',
+                  cell: (value) => (
+                    <div className="max-w-xs truncate">{value}</div>
+                  ),
+                },
+                {
+                  header: 'Status',
+                  accessor: 'status',
+                  cell: (value) => (
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${value === 'APPROVED'
+                        ? 'bg-green-100 text-green-800'
                         : value === 'REJECTED'
-                      ? 'bg-red-100 text-red-800'
-                      : 'bg-yellow-100 text-yellow-800'
-                  }`}>
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}>
                       {value.charAt(0) + value.slice(1).toLowerCase()}
-                  </span>
-                ),
-              },
-              {
-                header: 'Actions',
-                accessor: 'id',
-                cell: (value, row) => (
-                  <div className="flex items-center gap-2">
+                    </span>
+                  ),
+                },
+                {
+                  header: 'Actions',
+                  accessor: 'id',
+                  cell: (value, row) => (
+                    <div className="flex items-center gap-2">
                       {row.status === 'PENDING' && (
-                      <>
+                        <>
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleStatusUpdate(value, 'APPROVED')}
                             className="text-green-600 hover:text-green-700"
                           >
-                          <Check className="w-4 h-4" />
-                        </Button>
+                            <Check className="w-4 h-4" />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleStatusUpdate(value, 'REJECTED')}
                             className="text-red-600 hover:text-red-700"
                           >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                ),
-              },
-            ]}
-          />
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  ),
+                },
+              ]}
+            />
           )}
         </div>
       </div>

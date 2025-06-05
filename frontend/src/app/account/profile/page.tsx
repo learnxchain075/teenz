@@ -37,7 +37,7 @@ export default function ProfilePage() {
       }
 
       try {
-        const res = await fetch('http://localhost:5000/api/v1/user/me', {
+        const res = await fetch('https://api.teenzskin.com/api/v1/user/me', {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -88,7 +88,7 @@ export default function ProfilePage() {
     }
 
     try {
-      const res = await fetch(`http://localhost:5000/api/v1/user/profile`, {
+      const res = await fetch(`https://api.teenzskin.com/api/v1/user/profile`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

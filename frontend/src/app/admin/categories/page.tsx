@@ -53,7 +53,7 @@ export default function CategoriesPage() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/v1/categories');
+      const response = await fetch('https://api.teenzskin.com/api/v1/categories');
       if (!response.ok) throw new Error('Failed to fetch categories');
       const data = await response.json();
       setCategories(Array.isArray(data) ? data : []);
@@ -92,7 +92,7 @@ export default function CategoriesPage() {
         formData.append('imageUrl', categoryData.image);
       }
 
-      const response = await fetch('http://localhost:5000/api/v1/categories', {
+      const response = await fetch('https://api.teenzskin.com/api/v1/categories', {
         method: 'POST',
         body: formData
       });
@@ -145,7 +145,7 @@ export default function CategoriesPage() {
       }
 
       const response = await fetch(
-        `http://localhost:5000/api/v1/categories/${selectedCategory.id}`,
+        `https://api.teenzskin.com/api/v1/categories/${selectedCategory.id}`,
         {
           method: 'PUT',
           body: formData
@@ -182,7 +182,7 @@ export default function CategoriesPage() {
 
     setIsLoading(true);
     try {
-      const response = await fetch(`http://localhost:5000/api/v1/categories/${id}`, {
+      const response = await fetch(`https://api.teenzskin.com/api/v1/categories/${id}`, {
         method: 'DELETE',
       });
 
@@ -272,9 +272,8 @@ export default function CategoriesPage() {
                   name="name"
                   value={categoryData.name}
                   onChange={handleInputChange}
-                  className={`w-full p-3 border ${
-                    formErrors.name ? 'border-red-500' : 'border-gray-300'
-                  } rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-300`}
+                  className={`w-full p-3 border ${formErrors.name ? 'border-red-500' : 'border-gray-300'
+                    } rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-300`}
                   placeholder="Enter category name"
                   disabled={isLoading}
                 />
@@ -291,9 +290,8 @@ export default function CategoriesPage() {
                   name="description"
                   value={categoryData.description}
                   onChange={handleInputChange}
-                  className={`w-full p-3 border ${
-                    formErrors.description ? 'border-red-500' : 'border-gray-300'
-                  } rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-300`}
+                  className={`w-full p-3 border ${formErrors.description ? 'border-red-500' : 'border-gray-300'
+                    } rounded-lg focus:ring-2 focus:ring-blue-500 transition duration-300`}
                   placeholder="Enter category description"
                   rows={4}
                   disabled={isLoading}
@@ -314,7 +312,7 @@ export default function CategoriesPage() {
                   onChange={handleImageChange}
                   className="hidden"
                 />
-                <div 
+                <div
                   onClick={handleImageClick}
                   className="cursor-pointer"
                 >
@@ -363,8 +361,8 @@ export default function CategoriesPage() {
                     ? 'Updating...'
                     : 'Creating...'
                   : selectedCategory
-                  ? 'Update Category'
-                  : 'Create Category'}
+                    ? 'Update Category'
+                    : 'Create Category'}
               </Button>
             </div>
           </form>
@@ -400,95 +398,94 @@ export default function CategoriesPage() {
               </Button>
             </div>
           </div>
-<AdminTable
-  data={categories}
-  columns={[
-    {
-      header: 'Category',
-      accessor: 'name',
-      cell: (value, row) => (
-        <div className="flex items-center">
-          {row?.imageUrl ? (
-            <div className="relative w-12 h-12 rounded-lg overflow-hidden mr-3">
-              <Image
-                src={row.imageUrl}
-                alt={row.name || 'Category image'}
-                width={48}
-                height={48}
-                className="object-cover"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = '/placeholder-image.jpg';
-                }}
-              />
-            </div>
-          ) : (
-            <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center mr-3">
-              <ImageIcon className="w-6 h-6 text-gray-400" />
-            </div>
-          )}
-          <div>
-            <div className="font-medium text-gray-900">{row?.name || 'Unnamed Category'}</div>
-            <div className="text-sm text-gray-500">
-              {row?.description || 'No description available'}
-            </div>
-          </div>
-        </div>
-      ),
-    },
-    {
-      header: 'Products',
-      accessor: 'productCount',
-      cell: (value) => (
-        <span className="text-gray-900">
-          {value || '0'}
-        </span>
-      ),
-    },
-    {
-      header: 'Status',
-      accessor: 'status',
-      cell: (value) => (
-        <span
-          className={`px-2 py-1 rounded-full text-xs font-medium ${
-            value === 'ACTIVE'
-              ? 'bg-green-100 text-green-800'
-              : 'bg-gray-100 text-gray-800'
-          }`}
-        >
-          {value || 'INACTIVE'}
-        </span>
-      ),
-    },
-    {
-      header: 'Actions',
-      accessor: 'id',
-      cell: (id) => (
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => {
-              const category = categories.find(c => c.id === id);
-              if (category) {
-                handleEdit(category);
-              }
-            }}
-          >
-            <Edit className="w-4 h-4" />
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => handleDelete(id)}
-          >
-            <Trash2 className="w-4 h-4 text-red-600" />
-          </Button>
-        </div>
-      ),
-    },
-  ]}
-/>
+          <AdminTable
+            data={categories}
+            columns={[
+              {
+                header: 'Category',
+                accessor: 'name',
+                cell: (value, row) => (
+                  <div className="flex items-center">
+                    {row?.imageUrl ? (
+                      <div className="relative w-12 h-12 rounded-lg overflow-hidden mr-3">
+                        <Image
+                          src={row.imageUrl}
+                          alt={row.name || 'Category image'}
+                          width={48}
+                          height={48}
+                          className="object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = '/placeholder-image.jpg';
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center mr-3">
+                        <ImageIcon className="w-6 h-6 text-gray-400" />
+                      </div>
+                    )}
+                    <div>
+                      <div className="font-medium text-gray-900">{row?.name || 'Unnamed Category'}</div>
+                      <div className="text-sm text-gray-500">
+                        {row?.description || 'No description available'}
+                      </div>
+                    </div>
+                  </div>
+                ),
+              },
+              {
+                header: 'Products',
+                accessor: 'productCount',
+                cell: (value) => (
+                  <span className="text-gray-900">
+                    {value || '0'}
+                  </span>
+                ),
+              },
+              {
+                header: 'Status',
+                accessor: 'status',
+                cell: (value) => (
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${value === 'ACTIVE'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-gray-100 text-gray-800'
+                      }`}
+                  >
+                    {value || 'INACTIVE'}
+                  </span>
+                ),
+              },
+              {
+                header: 'Actions',
+                accessor: 'id',
+                cell: (id) => (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        const category = categories.find(c => c.id === id);
+                        if (category) {
+                          handleEdit(category);
+                        }
+                      }}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDelete(id)}
+                    >
+                      <Trash2 className="w-4 h-4 text-red-600" />
+                    </Button>
+                  </div>
+                ),
+              },
+            ]}
+          />
 
         </div>
       </div>

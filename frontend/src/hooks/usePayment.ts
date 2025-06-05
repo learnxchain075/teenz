@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { loadRazorpayScript, initializeRazorpayPayment } from '@/lib/razorpay';
-import { toast } from 'react-hot-toast';
+import { useState } from "react";
+import { loadRazorpayScript, initializeRazorpayPayment } from "@/lib/razorpay";
+import { toast } from "react-hot-toast";
 
 interface PaymentDetails {
   amount: number;
@@ -67,31 +67,34 @@ export const usePayment = () => {
         userId: Number(details.userId),
         cartItems: details.cartItems,
         addressId: details.addressId,
-        couponCode: details.couponCode
+        couponCode: details.couponCode,
       };
 
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       if (!token) {
-        throw new Error('Authentication token not found');
+        throw new Error("Authentication token not found");
       }
 
-      const response = await fetch('http://localhost:5000/api/v1/payment/create-order', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      });
+      const response = await fetch(
+        "https://api.teenzskin.com/api/v1/payment/create-order",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        }
+      );
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to create order');
+        throw new Error(error.error || "Failed to create order");
       }
 
-      return await response.json() as OrderResponse;
+      return (await response.json()) as OrderResponse;
     } catch (error) {
-      console.error('Error creating order:', error);
+      console.error("Error creating order:", error);
       throw error;
     }
   };
@@ -104,55 +107,60 @@ export const usePayment = () => {
     currency: string;
   }) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       if (!token) {
-        throw new Error('Authentication token not found');
+        throw new Error("Authentication token not found");
       }
 
-      const response = await fetch('http://localhost:5000/api/v1/payment/verify-payment', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          ...paymentData,
-          amount: Math.round(parseFloat(paymentData.amount.toString()))
-        })
-      });
+      const response = await fetch(
+        "https://api.teenzskin.com/api/v1/payment/verify-payment",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            ...paymentData,
+            amount: Math.round(parseFloat(paymentData.amount.toString())),
+          }),
+        }
+      );
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Payment verification failed');
+        throw new Error(error.error || "Payment verification failed");
       }
 
-      return await response.json() as VerificationResponse;
+      return (await response.json()) as VerificationResponse;
     } catch (error) {
-      console.error('Error verifying payment:', error);
+      console.error("Error verifying payment:", error);
       throw error;
     }
   };
 
-  const initiatePayment = async (details: PaymentDetails): Promise<PaymentResponse> => {
+  const initiatePayment = async (
+    details: PaymentDetails
+  ): Promise<PaymentResponse> => {
     try {
       setIsLoading(true);
 
       const isScriptLoaded = await loadRazorpayScript();
       if (!isScriptLoaded) {
-        throw new Error('Failed to load Razorpay SDK');
+        throw new Error("Failed to load Razorpay SDK");
       }
 
       const orderData = await createOrder(details);
-      
+
       if (!orderData.success) {
-        throw new Error(orderData.error || 'Failed to create order');
+        throw new Error(orderData.error || "Failed to create order");
       }
 
       const paymentResponse = await initializeRazorpayPayment({
         orderId: orderData.razorpayOrder.id,
         amount: details.amount,
-        name: details.name || 'Your Store',
-        description: details.description || 'Purchase',
+        name: details.name || "Your Store",
+        description: details.description || "Purchase",
         prefillEmail: details.email,
         prefillContact: details.contact,
       });
@@ -163,7 +171,8 @@ export const usePayment = () => {
       }
 
       if (!paymentResponse.success || !paymentResponse.razorpay_payment_id) {
-        const errorMessage = paymentResponse.error?.description || 'Payment failed';
+        const errorMessage =
+          paymentResponse.error?.description || "Payment failed";
         setIsLoading(false);
         throw new Error(errorMessage);
       }
@@ -172,19 +181,19 @@ export const usePayment = () => {
         razorpay_order_id: orderData.razorpayOrder.id,
         razorpay_payment_id: paymentResponse.razorpay_payment_id,
         amount: details.amount,
-        method: 'razorpay',
-        currency: 'INR',
+        method: "razorpay",
+        currency: "INR",
       });
 
       if (!verificationResponse.success) {
-        throw new Error('Payment verification failed');
+        throw new Error("Payment verification failed");
       }
 
       setIsLoading(false);
-      return { 
-        success: true, 
+      return {
+        success: true,
         orderId: orderData.dbOrder.id,
-        orderName: verificationResponse.orderName 
+        orderName: verificationResponse.orderName,
       };
     } catch (error: any) {
       setIsLoading(false);
@@ -196,4 +205,4 @@ export const usePayment = () => {
     initiatePayment,
     isLoading,
   };
-}; 
+};
