@@ -11,4 +11,6 @@ router.post("/signin", signinController);
 
 router.post("/signup",upload.single("profilePicture"), signupController);
 
+router.post("/superadmin/admin/signup", upload.single("profilePicture"), signupController);
+
 export default router;
