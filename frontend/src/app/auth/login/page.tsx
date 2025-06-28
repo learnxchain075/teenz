@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import axios from 'axios';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
@@ -17,6 +17,8 @@ export default function LoginPage() {
   const [user, setUser] = useState<any>(null);
   const [token, setToken] = useState<string | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectPath = searchParams.get('redirect');
 
   const API_URL = `https://api.teenzskin.com/api/v1/auth/signin`;
 
@@ -56,7 +58,9 @@ export default function LoginPage() {
 
         const role = data.user.role?.toUpperCase();
         setTimeout(() => {
-          if (role === 'ADMIN') {
+          if (redirectPath) {
+            router.push(redirectPath);
+          } else if (role === 'ADMIN') {
             router.push('/admin');
           } else {
             router.push('/account/profile');
