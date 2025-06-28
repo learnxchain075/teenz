@@ -53,7 +53,7 @@ export default function AboutPage() {
         </div>
 
         {/* Stats */}
-        <motion.div
+        {/* <motion.div
           className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-20"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -67,7 +67,7 @@ export default function AboutPage() {
               <div className="text-gray-600 dark:text-gray-400">{stat.label}</div>
             </div>
           ))}
-        </motion.div>
+        </motion.div> */}
 
         {/* Story Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-20">

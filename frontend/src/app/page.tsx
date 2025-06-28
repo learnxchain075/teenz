@@ -25,7 +25,7 @@ export default function Home() {
     <div className="flex flex-col min-h-screen">
       <Hero />
       <Features />
-      <FeaturedCollections autoplay items={5} />
+      {/* <FeaturedCollections autoplay items={5} /> */}
       <Categories columns={4} />
       <HowItWorks
         steps={["Choose your products", "Add to cart", "Checkout securely", "Enjoy fast delivery"]}
@@ -63,12 +63,12 @@ export default function Home() {
         style="masonry"
       /> */}
       {/* <BrandLogos /> */}
-      <AppPromo
+      {/* <AppPromo
         headline="Get our App"
         subtext="Shop faster and easier on our mobile app."
         buttons={["App Store", "Google Play"]}
         imageStyle="phone-mockup"
-      />
+      /> */}
       <FAQ
         items={["What is your return policy?", "Do you offer international shipping?", "How can I track my order?"]}
         expandable={true}

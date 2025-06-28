@@ -30,7 +30,7 @@ const navigation = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
   { name: 'Users', href: '/admin/users', icon: Users },
   { name: 'Products', href: '/admin/products', icon: ShoppingBag },
-  { name: 'Collections', href: '/admin/collections', icon: FolderOpen },
+  // { name: 'Collections', href: '/admin/collections', icon: FolderOpen },
   { name: 'Categories', href: '/admin/categories', icon: Grid },
   { name: 'Orders', href: '/admin/orders', icon: Package },
   // { name: 'Coupons', href: '/admin/coupons', icon: Tags },

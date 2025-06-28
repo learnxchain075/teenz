@@ -587,9 +587,9 @@ function CheckoutPage() {
                             defaultChecked
                           />
                           <label htmlFor="card" className="ml-3">
-                            <span className="block font-medium">Credit Card</span>
+                            <span className="block font-medium">Razorpay</span>
                             <span className="block text-sm text-gray-500 dark:text-gray-400">
-                              Pay with your credit or debit card
+                              Pay with razorpay your choice payment option
                             </span>
                           </label>
                         </div>

@@ -56,7 +56,7 @@ interface NavbarProps {
 const mainLinks = [
   { name: 'Home', href: '/' },
   { name: 'Shop', href: '/categories', hasDropdown: true },
-  { name: 'Collections', href: '/collections', hasDropdown: true },
+  // { name: 'Collections', href: '/collections', hasDropdown: true },
   { name: 'About', href: '/about' },
   { name: 'Contact', href: '/contact' },
 ];
