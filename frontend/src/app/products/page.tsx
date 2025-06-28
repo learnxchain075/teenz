@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   Grid2X2,
@@ -54,10 +55,16 @@ export default function ProductsPage() {
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [categories, setCategories] = useState<any[]>([]);
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    const initialQuery = searchParams.get('search') || '';
+    setSearchQuery(initialQuery);
+  }, [searchParams]);
 
   useEffect(() => {
     filterProducts();
