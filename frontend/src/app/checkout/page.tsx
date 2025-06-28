@@ -46,6 +46,12 @@ function CheckoutPage() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
+        const tokenCheck = localStorage.getItem('token');
+        if (!tokenCheck) {
+          toast.error('Please login to continue');
+          router.push('/auth/login?redirect=/checkout');
+          return;
+        }
 
         const mode = searchParams.get('mode');
         if (mode === 'buy_now') {
@@ -64,7 +70,7 @@ function CheckoutPage() {
           }
         }
 
-        const token = localStorage.getItem('token');
+        const token = tokenCheck;
         if (token) {
           const userRes = await fetch('https://api.teenzskin.com/api/v1/user/me', {
             headers: { Authorization: `Bearer ${token}` }

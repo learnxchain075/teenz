@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ShoppingBag, Trash2, Plus, Minus, ArrowRight } from 'lucide-react';
 import { useCartStore } from '@/lib/store';
 import Button from '@/components/ui/Button';
@@ -12,6 +13,7 @@ import { toast } from 'react-hot-toast';
 export default function CartPage() {
   const { items, removeItem, updateQuantity, getTotal, getItemCount } = useCartStore();
   const [isUpdating, setIsUpdating] = useState(false);
+  const router = useRouter();
 
   const handleQuantityChange = async (productId: string, currentQuantity: number, delta: number) => {
     setIsUpdating(true);
@@ -195,6 +197,11 @@ export default function CartPage() {
                     if (getItemCount() === 0) {
                       e.preventDefault();
                       toast.error('Please add items to cart before checkout');
+                      return;
+                    }
+                    if (!localStorage.getItem('token')) {
+                      e.preventDefault();
+                      router.push('/auth/login?redirect=/checkout');
                     }
                   }}
                 >
