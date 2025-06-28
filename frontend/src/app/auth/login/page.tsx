@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import axios from 'axios';
 import { motion } from 'framer-motion';
@@ -9,7 +9,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import { Mail, Lock, ArrowRight, EyeOff, Eye } from 'lucide-react';
 import Button from '@/components/ui/Button';
 
-export default function LoginPage() {
+function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -20,7 +20,9 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const redirectPath = searchParams.get('redirect');
 
-  const API_URL = `https://api.teenzskin.com/api/v1/auth/signin`;
+  const API_URL = process.env.NEXT_PUBLIC_API_URL
+    ? `${process.env.NEXT_PUBLIC_API_URL}/auth/signin`
+    : 'https://api.teenzskin.com/api/v1/auth/signin';
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -173,5 +175,13 @@ export default function LoginPage() {
         </div>
       </div>
     </>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense>
+      <LoginPage />
+    </Suspense>
   );
 }
