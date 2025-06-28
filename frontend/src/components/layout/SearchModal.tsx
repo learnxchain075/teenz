@@ -27,8 +27,17 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
 
       setIsLoading(true);
       try {
-        const data = await api.get(`/products/search?q=${encodeURIComponent(query)}`);
-        setResults(data);
+        // Fetch all products and filter client-side since the API
+        // does not expose a dedicated search endpoint
+        const data = await api.get('/products');
+        const filtered = (data as Product[]).filter((product) => {
+          const q = query.toLowerCase();
+          return (
+            product.name.toLowerCase().includes(q) ||
+            product.description?.toLowerCase().includes(q)
+          );
+        });
+        setResults(filtered);
       } catch (error) {
         console.error('Error searching products:', error);
       } finally {
