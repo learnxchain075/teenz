@@ -21,7 +21,7 @@ interface Order {
   customerName: string;
   date: string;
   total: number;
-  status: string;
+  orderStatus: string;
   items?: Array<{
     id: string;
     name: string;
@@ -147,18 +147,20 @@ export default function OrderDetailsModal({ isOpen, onClose, order }: OrderDetai
                       </div>
                       <div>
                         <p className="text-sm text-gray-500">Status</p>
-                        <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                          order.status === 'COMPLETED'
-                            ? 'bg-green-100 text-green-800'
-                            : order.status === 'PROCESSING'
-                            ? 'bg-blue-100 text-blue-800'
-                            : order.status === 'PENDING'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : order.status === 'CANCELLED'
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {order.status}
+                        <span
+                          className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
+                            order.orderStatus === 'DELIVERED'
+                              ? 'bg-green-100 text-green-800'
+                              : order.orderStatus === 'SHIPPED' || order.orderStatus === 'IN_TRANSIT'
+                                ? 'bg-blue-100 text-blue-800'
+                                : order.orderStatus === 'PENDING'
+                                  ? 'bg-yellow-100 text-yellow-800'
+                                  : order.orderStatus === 'CANCELLED'
+                                    ? 'bg-red-100 text-red-800'
+                                    : 'bg-gray-100 text-gray-800'
+                          }`}
+                        >
+                          {order.orderStatus.replace('_', ' ')}
                         </span>
                       </div>
                     </div>

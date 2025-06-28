@@ -151,6 +151,7 @@ model Order {
   userId          Int
   total           Float
   status          Status   @default(ACTIVE)
+  orderStatus     OrderStatus @default(PENDING)
   isPaid          Boolean  @default(false) // ✅ Track payment status
   couponCode      String? // ✅ Applied coupon (optional)
   razorpayOrderId String? // ✅ For Razorpay tracking
@@ -265,4 +266,12 @@ enum OrderItemStatus {
   PREPARING
   IN_SHIPPING
   DELIVERED
+}
+
+enum OrderStatus {
+  PENDING
+  SHIPPED
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
 }

@@ -29,7 +29,7 @@ interface Order {
   itemCount: number;
   date: string;
   total: number;
-  status: OrderStatus;
+  orderStatus: OrderStatus;
   items: Array<{
     id: string;
     name: string;
@@ -57,10 +57,10 @@ interface ApiResponse<T> {
 }
 
 enum OrderStatus {
-  ACTIVE = 'ACTIVE',
   PENDING = 'PENDING',
-  PROCESSING = 'PROCESSING',
-  COMPLETED = 'COMPLETED',
+  SHIPPED = 'SHIPPED',
+  IN_TRANSIT = 'IN_TRANSIT',
+  DELIVERED = 'DELIVERED',
   CANCELLED = 'CANCELLED'
 }
 
@@ -138,7 +138,7 @@ export default function OrdersPage() {
       order.customerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.id.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesStatus = selectedStatus === 'all' || order.status === selectedStatus;
+    const matchesStatus = selectedStatus === 'all' || order.orderStatus === selectedStatus;
 
     // Log filtered order details when search or status filter is active
     // if (searchQuery || selectedStatus !== 'all') {
@@ -167,7 +167,7 @@ export default function OrdersPage() {
       if (response.data.success) {
         // Update local state
         setOrders(orders.map(order =>
-          order.id === orderId ? { ...order, status: newStatus } : order
+          order.id === orderId ? { ...order, orderStatus: newStatus } : order
         ));
 
         toast.success(`Order status updated to ${newStatus.toLowerCase()}`);
@@ -345,19 +345,22 @@ export default function OrdersPage() {
                 },
                 {
                   header: 'Status',
-                  accessor: 'status',
+                  accessor: 'orderStatus',
                   cell: (value) => (
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${value === OrderStatus.COMPLETED
-                        ? 'bg-green-100 text-green-800'
-                        : value === OrderStatus.PROCESSING
-                          ? 'bg-blue-100 text-blue-800'
-                          : value === OrderStatus.PENDING
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : value === OrderStatus.CANCELLED
-                              ? 'bg-red-100 text-red-800'
-                              : 'bg-gray-100 text-gray-800'
-                      }`}>
-                      {value}
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        value === OrderStatus.DELIVERED
+                          ? 'bg-green-100 text-green-800'
+                          : value === OrderStatus.SHIPPED || value === OrderStatus.IN_TRANSIT
+                            ? 'bg-blue-100 text-blue-800'
+                            : value === OrderStatus.PENDING
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : value === OrderStatus.CANCELLED
+                                ? 'bg-red-100 text-red-800'
+                                : 'bg-gray-100 text-gray-800'
+                      }`}
+                    >
+                      {value.replace('_', ' ')}
                     </span>
                   ),
                 },
@@ -374,26 +377,15 @@ export default function OrdersPage() {
                       >
                         <Eye className="w-4 h-4" />
                       </Button>
-                      {row.status !== OrderStatus.COMPLETED && row.status !== OrderStatus.CANCELLED && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          title="Mark as Completed"
-                          onClick={() => handleStatusUpdate(value, OrderStatus.COMPLETED)}
-                        >
-                          <Truck className="w-4 h-4" />
-                        </Button>
-                      )}
-                      {row.status !== OrderStatus.CANCELLED && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          title="Cancel Order"
-                          onClick={() => handleStatusUpdate(value, OrderStatus.CANCELLED)}
-                        >
-                          <XCircle className="w-4 h-4 text-error-600" />
-                        </Button>
-                      )}
+                      <select
+                        value={row.orderStatus}
+                        onChange={(e) => handleStatusUpdate(value, e.target.value as OrderStatus)}
+                        className="border rounded px-2 py-1 text-sm"
+                      >
+                        {Object.values(OrderStatus).map(s => (
+                          <option key={s} value={s}>{s.replace('_', ' ')}</option>
+                        ))}
+                      </select>
                     </div>
                   ),
                 },
