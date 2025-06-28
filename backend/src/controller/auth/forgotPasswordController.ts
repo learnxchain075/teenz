@@ -45,7 +45,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
 
     console.log("Reset link:", resetLink);
 
-    await sendResetEmail(user.email, "Password Reset");
+    await sendResetEmail(user.email, resetLink);
 
     res.status(200).json({
       message: "Password reset link has been sent to your email.",

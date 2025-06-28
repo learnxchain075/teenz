@@ -15,6 +15,7 @@ import { customValidationResult, getErrorMessage, getErrorStack } from "./utils/
 
 import { CONFIG } from "./config";
 import signinRoute from "./routes/auth/signinRoute";
+import forgotRoute from "./routes/auth/forgotRoute";
 
 dotenv.config();
 
@@ -44,6 +45,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/v1/auth", signinRoute);
+app.use("/api/v1/auth", forgotRoute);
 // app.use("/api/v1", publicRouter);
 
 app.use("/api/v1", apiRouter);
