@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { prisma } from "../../db/prisma";
-import { Prisma, Status } from "@prisma/client";
+import { Prisma, Status, OrderStatus } from "@prisma/client";
 
 interface OrderItem {
   id: string;
@@ -21,6 +21,7 @@ interface FormattedOrder {
   date: string;
   total: number;
   status: string;
+  orderStatus: OrderStatus;
   items: Array<{
     id: string;
     name: string;
@@ -41,6 +42,7 @@ export const getAllOrders = async (req: Request, res: Response) => {
         userId: true,
         total: true,
         status: true,
+        orderStatus: true,
         isPaid: true,
         createdAt: true,
         user: {
@@ -79,6 +81,7 @@ export const getAllOrders = async (req: Request, res: Response) => {
       date: order.createdAt.toISOString().split("T")[0],
       total: order.total,
       status: (order.status as Status).toLowerCase(),
+      orderStatus: order.orderStatus as OrderStatus,
       items: order.OrderItem.map(item => ({
         id: item.id,
         name: item.product?.name || 'Unknown Product',
@@ -112,6 +115,7 @@ export const getUserOrders = async (req: Request, res: Response) => {
         orderName: true,
         total: true,
         status: true,
+        orderStatus: true,
         createdAt: true,
         OrderItem: {
           select: {
@@ -144,6 +148,7 @@ export const getUserOrders = async (req: Request, res: Response) => {
       date: order.createdAt.toISOString().split("T")[0],
       total: order.total,
       status: (order.status as Status).toLowerCase(),
+      orderStatus: order.orderStatus as OrderStatus,
       items: order.OrderItem.map(item => ({
         id: item.id,
         name: item.product?.name || 'Unknown Product',
@@ -188,6 +193,7 @@ export const getMyOrders = async (req: Request, res: Response) => {
         orderName: true,
         total: true,
         status: true,
+        orderStatus: true,
         createdAt: true,
         OrderItem: {
           select: {
@@ -220,6 +226,7 @@ export const getMyOrders = async (req: Request, res: Response) => {
       date: order.createdAt.toISOString(),
       total: order.total,
       status: (order.status as Status).toLowerCase(),
+      orderStatus: order.orderStatus as OrderStatus,
       items: order.OrderItem.map(item => ({
         id: item.id,
         name: item.product?.name || 'Unknown Product',
@@ -238,5 +245,27 @@ export const getMyOrders = async (req: Request, res: Response) => {
       message: "Failed to fetch orders",
       details: process.env.NODE_ENV === 'development' && err && typeof err === 'object' && 'message' in err ? (err as { message: string }).message : undefined
     });
+  }
+};
+
+// Update order status
+export const updateOrderStatus = async (req: Request, res: Response) => {
+  try {
+    const { orderId } = req.params;
+    const { status } = req.body as { status?: OrderStatus };
+
+    if (!status || !["PENDING", "SHIPPED", "IN_TRANSIT", "DELIVERED", "CANCELLED"].includes(status)) {
+      return res.status(400).json({ success: false, message: "Invalid status value" });
+    }
+
+    const order = await prisma.order.update({
+      where: { id: orderId },
+      data: { orderStatus: status },
+    });
+
+    return res.status(200).json({ success: true, order });
+  } catch (err) {
+    console.error("[Update Order Status]", err);
+    res.status(500).json({ success: false, message: "Failed to update order status" });
   }
 };

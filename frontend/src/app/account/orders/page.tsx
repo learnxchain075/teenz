@@ -25,7 +25,7 @@ interface Order {
   itemCount: number;
   date: string;
   total: number;
-  status: string;
+  orderStatus: string;
   items: OrderItem[];
 }
 
@@ -78,7 +78,7 @@ export default function OrdersPage() {
         const transformedOrders = data.orders.map(order => ({
           ...order,
           items: order.items || [], // Ensure items is always an array
-          status: order.status?.toLowerCase() || 'active'
+          orderStatus: order.orderStatus || 'PENDING'
         }));
         console.log('Transformed Orders:', transformedOrders);
         setOrders(transformedOrders);
@@ -119,7 +119,7 @@ export default function OrdersPage() {
 
     const matchesStatus =
       selectedStatus === 'all' ||
-      (order.status?.toLowerCase() || '') === selectedStatus.toLowerCase();
+      (order.orderStatus?.toLowerCase() || '') === selectedStatus.toLowerCase();
 
     return matchesSearch && matchesStatus;
   }) || [];
@@ -169,8 +169,8 @@ export default function OrdersPage() {
             >
               <option value="all">All Orders</option>
               <option value="pending">Pending</option>
-              <option value="processing">Processing</option>
               <option value="shipped">Shipped</option>
+              <option value="in_transit">In Transit</option>
               <option value="delivered">Delivered</option>
               <option value="cancelled">Cancelled</option>
             </select>
@@ -210,13 +210,20 @@ export default function OrdersPage() {
                     </p>
                   </div>
                   <div className="mt-2 sm:mt-0">
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
-                      ${order.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
-                        order.status === 'inactive' ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400' :
-                          'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'
+                    <span
+                      className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                        order.orderStatus === 'DELIVERED'
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                          : order.orderStatus === 'SHIPPED' || order.orderStatus === 'IN_TRANSIT'
+                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+                            : order.orderStatus === 'PENDING'
+                              ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
+                              : order.orderStatus === 'CANCELLED'
+                                ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+                                : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'
                       }`}
                     >
-                      {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                      {order.orderStatus.replace('_', ' ')}
                     </span>
                   </div>
                 </div>
