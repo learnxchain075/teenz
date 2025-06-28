@@ -160,7 +160,8 @@ export default function OrderDetailsModal({ isOpen, onClose, order }: OrderDetai
                                     : 'bg-gray-100 text-gray-800'
                           }`}
                         >
-                          {order.orderStatus.replace('_', ' ')}
+                        {order.orderStatus?.replace('_', ' ') || 'UNKNOWN'}
+
                         </span>
                       </div>
                     </div>

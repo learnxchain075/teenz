@@ -348,8 +348,7 @@ export default function OrdersPage() {
                   accessor: 'orderStatus',
                   cell: (value) => (
                     <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        value === OrderStatus.DELIVERED
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${value === OrderStatus.DELIVERED
                           ? 'bg-green-100 text-green-800'
                           : value === OrderStatus.SHIPPED || value === OrderStatus.IN_TRANSIT
                             ? 'bg-blue-100 text-blue-800'
@@ -358,9 +357,10 @@ export default function OrdersPage() {
                               : value === OrderStatus.CANCELLED
                                 ? 'bg-red-100 text-red-800'
                                 : 'bg-gray-100 text-gray-800'
-                      }`}
+                        }`}
                     >
-                      {value.replace('_', ' ')}
+                      {value?.replace('_', ' ') || 'UNKNOWN'}
+
                     </span>
                   ),
                 },

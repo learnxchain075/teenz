@@ -249,7 +249,7 @@ export const getMyOrders = async (req: Request, res: Response) => {
 };
 
 // Update order status
-export const updateOrderStatus = async (req: Request, res: Response) => {
+export const updateOrderStatus = async (req: Request, res: Response) :Promise<any>=> {
   try {
     const { orderId } = req.params;
     const { status } = req.body as { status?: OrderStatus };
