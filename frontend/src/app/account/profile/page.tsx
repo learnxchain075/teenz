@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { Camera, Mail, Phone, MapPin, Building, Globe, Save } from 'lucide-react';
@@ -26,6 +26,8 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editedProfile, setEditedProfile] = useState<UserProfile | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -78,6 +80,14 @@ export default function ProfilePage() {
     fetchProfile();
   }, [router]);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      setEditedProfile(prev => prev ? { ...prev, profilePicture: URL.createObjectURL(file) } : null);
+    }
+  };
+
   const handleSave = async () => {
     if (!editedProfile) return;
 
@@ -88,16 +98,19 @@ export default function ProfilePage() {
     }
 
     try {
+      const formData = new FormData();
+      formData.append('name', editedProfile.name);
+      formData.append('email', editedProfile.email);
+      if (selectedFile) {
+        formData.append('profilePicture', selectedFile);
+      }
+
       const res = await fetch(`https://api.teenzskin.com/api/v1/user/profile`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({
-          name: editedProfile.name,
-          email: editedProfile.email
-        }),
+        body: formData,
       });
 
       if (!res.ok) throw new Error('Failed to update profile');
@@ -105,6 +118,7 @@ export default function ProfilePage() {
       const data = await res.json();
       setProfile(prev => prev ? { ...prev, ...data } : null);
       setIsEditing(false);
+      setSelectedFile(null);
       toast.success('Profile updated successfully');
     } catch (err) {
       console.error('Failed to update profile:', err);
@@ -135,16 +149,29 @@ export default function ProfilePage() {
             <div className="relative">
               <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white dark:border-gray-800">
                 <Image
-                  src={profile.profilePicture || '/avatar-placeholder.png'}
+                  src={(isEditing ? editedProfile?.profilePicture : profile.profilePicture) || '/avatar-placeholder.png'}
                   alt={profile.name}
                   fill
                   className="object-cover"
                 />
               </div>
               {isEditing && (
-                <button className="absolute bottom-0 right-0 p-2 bg-white dark:bg-gray-800 rounded-full shadow-lg">
-                  <Camera className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                </button>
+                <>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="absolute bottom-0 right-0 p-2 bg-white dark:bg-gray-800 rounded-full shadow-lg"
+                  >
+                    <Camera className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                  </button>
+                </>
               )}
             </div>
           </div>
