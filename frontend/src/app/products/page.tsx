@@ -45,7 +45,7 @@ interface Product {
 
 export default function ProductsPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 100]);
   const [minRating, setMinRating] = useState<number>(0);
@@ -59,6 +59,9 @@ export default function ProductsPage() {
 
   useEffect(() => {
     fetchData();
+    if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
+      setIsSidebarOpen(true);
+    }
   }, []);
 
   useEffect(() => {
@@ -256,11 +259,10 @@ export default function ProductsPage() {
           </div>
         </div>
 
-        <div className="flex gap-8">
+        <div className="flex flex-col lg:flex-row gap-8 relative">
           {/* Filter Sidebar */}
           <div
-            className={`w-64 flex-shrink-0 transition-all duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-              }`}
+            className={`fixed inset-y-0 left-0 z-40 w-64 max-w-full p-6 bg-white dark:bg-card shadow-lg transform transition-transform duration-300 lg:relative lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} lg:w-64`}
           >
             <div className="bg-white dark:bg-card rounded-xl p-6 shadow-lg">
               <div className="flex items-center justify-between mb-6">
@@ -365,10 +367,16 @@ export default function ProductsPage() {
               </div>
             </div>
           </div>
+          {isSidebarOpen && (
+            <div
+              className="fixed inset-0 z-30 bg-black/50 lg:hidden"
+              onClick={() => setIsSidebarOpen(false)}
+            />
+          )}
 
           {/* Product Grid */}
           <div className="flex-1">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
               <Button
                 variant="ghost"
                 size="sm"
@@ -378,11 +386,11 @@ export default function ProductsPage() {
                 <SlidersHorizontal className="w-5 h-5" />
               </Button>
 
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 w-full sm:w-auto">
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800"
+                  className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 w-full sm:w-auto"
                 >
                   {sortOptions.map((option) => (
                     <option key={option.value} value={option.value}>
