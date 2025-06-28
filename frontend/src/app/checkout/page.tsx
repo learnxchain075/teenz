@@ -233,9 +233,9 @@ function CheckoutPage() {
         ), { duration: 2000 });
       }, 300);
 
-      // Navigate to products page after a short delay
+      // Navigate to orders page after a short delay
       setTimeout(() => {
-        router.push('/products');
+        router.push('/account/orders');
       }, 5000);
 
     } catch (error) {
@@ -403,6 +403,14 @@ function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-24">
+      {paymentLoading && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg flex items-center space-x-2">
+            <div className="w-6 h-6 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" />
+            <span className="text-gray-700 dark:text-gray-200">Verifying payment...</span>
+          </div>
+        </div>
+      )}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
           {/* Steps */}
@@ -605,8 +613,8 @@ function CheckoutPage() {
                 )}
 
                 <div className="mt-8 flex justify-end">
-                  <Button onClick={handleContinue} disabled={isLoading}>
-                    {isLoading ? (
+                  <Button onClick={handleContinue} disabled={isLoading || paymentLoading}>
+                    {isLoading || paymentLoading ? (
                       <div className="flex items-center">
                         <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
                         Processing...

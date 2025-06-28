@@ -14,6 +14,7 @@ export default function CartPage() {
   const { items, removeItem, updateQuantity, getTotal, getItemCount } = useCartStore();
   const [isUpdating, setIsUpdating] = useState(false);
   const router = useRouter();
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   const handleQuantityChange = async (productId: string, currentQuantity: number, delta: number) => {
     setIsUpdating(true);
@@ -22,6 +23,19 @@ export default function CartPage() {
       updateQuantity(productId, newQuantity);
     }
     setIsUpdating(false);
+  };
+
+  const handleCheckout = () => {
+    if (getItemCount() === 0) {
+      toast.error('Please add items to cart before checkout');
+      return;
+    }
+    if (!localStorage.getItem('token')) {
+      router.push('/auth/login?redirect=/checkout');
+      return;
+    }
+    setCheckoutLoading(true);
+    router.push('/checkout');
   };
 
   if (items.length === 0) {
@@ -186,26 +200,22 @@ export default function CartPage() {
                   </div>
                 </div>
 
-                <Link
-                  href={getItemCount() > 0 ? "/checkout" : "#"}
-                  className={`w-full mt-6 inline-flex items-center justify-center px-4 py-2 font-medium rounded-lg ${
+                <Button
+                  onClick={handleCheckout}
+                  fullWidth
+                  disabled={getItemCount() === 0 || checkoutLoading}
+                  className={`mt-6 ${
                     getItemCount() > 0
-                      ? "bg-primary-600 text-white hover:bg-primary-700 dark:bg-primary-400 dark:hover:bg-primary-500"
-                      : "bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400"
+                      ? ''
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400 hover:bg-gray-300'
                   }`}
-                  onClick={(e) => {
-                    if (getItemCount() === 0) {
-                      e.preventDefault();
-                      toast.error('Please add items to cart before checkout');
-                      return;
-                    }
-                    if (!localStorage.getItem('token')) {
-                      e.preventDefault();
-                      router.push('/auth/login?redirect=/checkout');
-                    }
-                  }}
                 >
-                  {getItemCount() > 0 ? (
+                  {checkoutLoading ? (
+                    <div className="flex items-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+                      Loading...
+                    </div>
+                  ) : getItemCount() > 0 ? (
                     <>
                       Proceed to Checkout
                       <ArrowRight className="ml-2 w-5 h-5" />
@@ -213,7 +223,7 @@ export default function CartPage() {
                   ) : (
                     'Add items to cart'
                   )}
-                </Link>
+                </Button>
 
                 <p className="mt-4 text-sm text-gray-500 dark:text-gray-400 text-center">
                   or{' '}
